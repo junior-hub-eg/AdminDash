@@ -1,0 +1,134 @@
+.pageWrapper {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: #f6f9f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6vh 4vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+/* ---------- Outer floating shapes (positions are % of the viewport) ---------- */
+.outer {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  height: auto;
+}
+.waveTopLeft      { top: 7%;  left: 4%;    width: clamp(48px, 9vw, 120px); }
+.halfTop          { top: 7%;  left: 66.5%; width: clamp(20px, 3.8vw, 52px); }
+.burstTopRight    { top: 5%;  left: 87.5%; width: clamp(32px, 5.8vw, 80px); }
+.halfLeft         { top: 51%; left: 1.2%;  width: clamp(22px, 4.4vw, 60px); }
+.curlRight        { top: 46%; right: 1.5%; width: clamp(24px, 4.8vw, 66px); }
+.curlBottomLeft   { bottom: 0; left: 3%;   width: clamp(18px, 2.8vw, 40px); transform: translateY(20%); }
+.burstBottomRight { bottom: 5%; right: 11%; width: clamp(26px, 4vw, 56px); }
+
+.card {
+  position: relative;
+  z-index: 2;
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: 49% 51%;
+  width: min(100%, 920px);
+  aspect-ratio: 585 / 358;
+  /* Keep the card's shape even when a form is taller than it (the monitor and teacher sign-up): the panel scrolls. */
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  background: #fff;
+  border: 1px solid #e3ece9;
+  border-radius: 4.8cqw;
+  box-shadow: 0 1.5cqw 5cqw rgba(20, 60, 70, 0.05);
+}
+
+
+.visual {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4.8cqw 0 0 4.8cqw;
+}
+
+.background {
+  object-fit: cover;
+  object-position: left top;
+  z-index: 0;
+}
+
+.brand {
+  position: absolute;
+  z-index: 3;
+  top: 7.5cqw;
+  left: 4.2cqw;
+  width: 26cqw;
+}
+.logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tagline {
+  margin: 1.2cqw 0 0 0.2cqw;
+  font-size: 1.45cqw;
+  line-height: 1.55;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  color: #1b2a5c;
+}
+
+.students {
+  position: absolute;
+  z-index: 2;
+  left: 2.5cqw;
+  bottom: 0;
+  width: 45.5cqw;
+  height: auto;
+}
+
+.inner {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  height: auto;
+}
+.curlLeft  { top: 24.5cqw; left: 6.5cqw; width: 6.5cqw; }
+.hatched   { top: 16.6cqw; left: 42cqw;   width: 4.6cqw; }
+.cross     { top: 23.2cqw; left: 44.6cqw; width: 4.2cqw; }
+.curlEdge  { top: 48cqw;   left: 46.8cqw; width: 3.6cqw; }
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* "safe": a form taller than the panel starts at the top and scrolls instead of being cut at the top. */
+  justify-content: safe center;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c9dcd8 transparent;
+  padding: 6cqw 5cqw;
+  box-sizing: border-box;
+}
+
+
+.content {
+  width: 100%;
+  max-width: 38.5cqw;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .pageWrapper { padding: 24px 16px; }
+  .card {
+    grid-template-columns: 1fr;
+    aspect-ratio: auto;
+    width: min(100%, 460px);
+    border-radius: 24px;
+  }
+  .visual, .hatched, .cross, .curlEdge { display: none; }
+  .panel { padding: 64px 28px 40px; overflow: visible; }
+  .content { max-width: 100%; }
+}
