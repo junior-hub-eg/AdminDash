@@ -24,6 +24,7 @@ import {
   ClipboardCheck,
   Award,
   KeyRound,
+  Languages,
   GraduationCap,
   Terminal,
   Presentation,
@@ -64,6 +65,7 @@ const NAV_GROUPS = [
   [
     { href: "/admin/mentors", label: tk("Mentors Management"), icon: Terminal },
     { href: "/admin/tracks", label: tk("Track Management"), icon: Presentation },
+    { href: "/admin/grammar", label: tk("Grammar Coach"), icon: Languages },
     { href: "/admin/notifications", label: tk("Notifications"), icon: Bell },
     { href: "/admin/roles", label: tk("Roles & Permissions"), icon: Shield },
     { href: "/admin/projects", label: tk("Projects"), icon: Folder },

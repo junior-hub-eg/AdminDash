@@ -20,6 +20,13 @@ import { teacher } from "./ar/teacher";
 import { students } from "./ar/students";
 import { curriculum } from "./ar/curriculum";
 import { assignments } from "./ar/assignments";
+import { teacherWorkspace } from "./ar/teacher-workspace";
+import { teacherMessages } from "./ar/teacher-messages";
+import { teacherCalendar } from "./ar/teacher-calendar";
+import { teacherProgress } from "./ar/teacher-progress";
+import { grammarCoach } from "./ar/grammar-coach";
+import { adminGrammar } from "./ar/admin-grammar";
+import { teacherGrammar } from "./ar/teacher-grammar";
 import { mentorArea } from "./ar/mentor-area";
 
 /** Arabic translations, keyed by the English text. `node scripts/i18n-check.mjs` lists missing ones. */
@@ -47,5 +54,12 @@ export const ar: Record<string, string> = {
   ...teacher,
   ...students,
   ...curriculum,
-  ...assignments
+  ...assignments,
+  ...teacherWorkspace,
+  ...teacherMessages,
+  ...teacherCalendar,
+  ...teacherProgress,
+  ...grammarCoach,
+  ...adminGrammar,
+  ...teacherGrammar,
 };

@@ -1,67 +1,60 @@
 // Arabic texts of the Students Directory (app/teacher/students/page.tsx).
 // Same format as mentors.ts: the key is the English text used in the code, the value is the Arabic.
 // Names, e-mails and student ids come from the API and are not translated here.
+// Shared words (All, Student, Class, Status, Previous, Next, All Classes, On Track, ...) live in other files.
 export const students: Record<string, string> = {
   // Header
   "Cohort Analytics & Oversight": "تحليلات المجموعات والإشراف",
   "Students Directory": "دليل الطلاب",
-  "Manage student roster, track mastery velocity, and review individualized learning interventions.":
-    "أدر قائمة الطلاب، وتابع سرعة إتقانهم، وراجع تدخلات التعلّم الفردية.",
+  "Manage student roster, track mastery velocity, and review individualized learning interventions.": "أدر قائمة الطلاب، وتابع سرعة إتقانهم، وراجع تدخلات التعلّم الفردية.",
   "Export Roster CSV": "تصدير القائمة (CSV)",
   "Enroll Student": "تسجيل طالب",
+  "Could not load the students.": "تعذّر تحميل الطلاب.",
+  "Could not load your classes.": "تعذّر تحميل فصولك.",
 
   // Stat cards
-  "Total Enrolled": "إجمالي المسجلين",
-  "Across 2 Sections": "موزعون على فصلين",
-  "Cohort Mastery": "إتقان المجموعة",
-  "+3.4% w/w": "+3.4% أسبوعيًا",
+  "In 1 class": "في فصل واحد",
+  "Across {n} classes": "موزعون على {n} فصول",
+  "Class Mastery": "إتقان الفصل",
+  "Average mastery": "متوسط الإتقان",
   "Struggling Alerts": "تنبيهات التعثر",
   "Immediate review": "تحتاج مراجعة فورية",
-  "Avg Practice Hours": "متوسط ساعات التدريب",
-  "4.4h": "4.4 س",
-  "Per student/wk": "لكل طالب أسبوعيًا",
+  "No one needs help now": "لا أحد يحتاج مساعدة الآن",
+  "Avg Practice Time": "متوسط وقت التدريب",
+  "Practice time per student": "وقت التدريب لكل طالب",
 
   // Toolbar
-  "All Classes": "كل الفصول",
-  "Grade 9A": "الصف 9A",
-  "Grade 9B": "الصف 9B",
-  "All": "الكل",
   "Struggling": "متعثر",
-  "On Track": "في المسار",
-  "Top Quartile": "الربع الأعلى",
   "Search student by name or ID...": "ابحث عن طالب بالاسم أو الرقم...",
-  "More filters": "فلاتر إضافية",
+  "Default order": "الترتيب الافتراضي",
+  "Mastery (highest first)": "الإتقان (الأعلى أولًا)",
+  "Last active (most recent)": "آخر نشاط (الأحدث أولًا)",
+  "Name (A-Z)": "الاسم (أ-ي)",
 
   // Table
-  "Student": "الطالب",
-  "Student ID": "رقم الطالب",
-  "Class": "الفصل",
-  "Lessons": "الدروس",
   "Problems Solved": "المسائل المحلولة",
-  "Mastery": "الإتقان",
   "Time Spent": "الوقت المستغرق",
   "Last Active": "آخر نشاط",
-  "Status": "الحالة",
+  "Mastery %": "الإتقان %",
+  "Grade {grade}{name}": "الصف {grade}{name}",
+  "{h}h {m}m": "{h}س {m}د",
+  "{m}m": "{m}د",
+  "Never": "أبدًا",
+  "Today, {time}": "اليوم، {time}",
+  "{n} days ago": "منذ {n} أيام",
   "No students match your filters.": "لا يوجد طلاب يطابقون الفلاتر.",
-
-  // Mock values (these come formatted from the API later)
-  "4h 25m": "4س 25د",
-  "5h 10m": "5س 10د",
-  "3h 15m": "3س 15د",
-  "4h 50m": "4س 50د",
-  "3h 55m": "3س 55د",
-  "4h 05m": "4س 05د",
-  "Today, 10:14 AM": "اليوم، 10:14 ص",
-  "Today, 08:42 AM": "اليوم، 08:42 ص",
-  "Yesterday": "أمس",
-  "Today, 11:20 AM": "اليوم، 11:20 ص",
-  "2 days ago": "منذ يومين",
-  "Today, 09:12 AM": "اليوم، 09:12 ص",
+  "No students in your classes yet.": "لا يوجد طلاب في فصولك بعد.",
 
   // Footer
-  "Showing": "عرض",
   "of": "من",
-  "students": "طالب",
-  "Previous": "السابق",
-  "Next": "التالي",
+  "Pagination": "التنقل بين الصفحات",
+
+  // Enroll dialog
+  "Students join a class with its join code from their account. Share the code of the class below.": "ينضم الطلاب إلى الفصل بكود الانضمام من حساباتهم. شارك كود الفصل أدناه.",
+  "You have no classes yet.": "ليس لديك فصول بعد.",
+  "Students join instantly": "ينضم الطلاب فورًا",
+  "Requests need your approval": "الطلبات تحتاج موافقتك",
+  "{n} pending": "{n} بانتظار الموافقة",
+  "Copy": "نسخ",
+  "Review pending join requests in My Classes": "راجع طلبات الانضمام المعلّقة في فصولي",
 };

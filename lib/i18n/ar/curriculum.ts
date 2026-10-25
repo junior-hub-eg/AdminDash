@@ -1,113 +1,80 @@
 /**
- * Arabic texts for the teacher Curriculum page (app/teacher/curriculum/page.tsx).
+ * Arabic texts for the teacher Curriculum page (app/teacher/curriculum/page.tsx)
+ * and its dialogs (components/teacher/curriculum/curriculum-dialogs.tsx).
  * The key is the English wording used in the page, the value is the Arabic.
- * {n}, {total}, {pct}, {time}, {m}, {p} are filled in by t(...).
+ * {n}, {title}, {pct}, {units}, {lessons}, {problems} are filled in by t(...).
  */
 export const curriculum: Record<string, string> = {
-  // Hero
-  "Fall 2024 Track": "مسار خريف 2024",
-  "UI/UX Product Design & Track Management": "تصميم المنتجات UI/UX وإدارة المسار",
-  "Curate skill sequence, interactive matrices, and apprentice readiness for professional product design roles.":
-    "نسّق تسلسل المهارات والمصفوفات التفاعلية وجاهزية المتدربين لوظائف تصميم المنتجات الاحترافية.",
-  Units: "وحدات",
-  "Integrated Curriculum": "منهج متكامل",
-  "Overall Track Mastery": "الإتقان الإجمالي للمسار",
+  // Header and workspace bar
+  "My Lessons & Teaching Plan": "دروسي وخطة التدريس",
+  "Prepare your units and lessons, add practice activities, and review what your students hand in.":
+    "جهّز وحداتك ودروسك، وأضف أنشطة التدريب، وراجع ما يسلّمه طلابك.",
+  "Total Students": "إجمالي الطلاب",
+  "Active Enrolled": "المسجّلون حالياً",
+  "To Grade": "بانتظار التصحيح",
+  "My Teaching Workspace": "مساحة التدريس الخاصة بي",
+  "Switch subject": "تبديل المادة",
+  "Create Lesson": "إنشاء درس",
+  "Review Submissions": "مراجعة التسليمات",
+  "Arabic grammar coach — review AI parsing": "مدرّب النحو العربي — راجع إعراب الذكاء الاصطناعي",
+  "Review how the AI parses your students' sentences (i'rab).": "راجع كيف يُعرب الذكاء الاصطناعي جمل طلابك.",
+  "Could not load the curriculum.": "تعذّر تحميل المنهج.",
+  "Could not load the assignments.": "تعذّر تحميل الواجبات.",
 
-  // Repository bar
-  "Curriculum Repository": "مستودع المنهج",
-  "Add Unit": "إضافة وحدة",
-  "Add Practical Exercise": "إضافة تمرين عملي",
-  "Create Design Challenge": "إنشاء تحدي تصميم",
-
-  // Modules & lessons
-  "Modules & Lessons Structure": "هيكل الوحدات والدروس",
-  "Showing {n} of {total} Units": "عرض {n} من {total} وحدات",
-  "Expand unit": "توسيع الوحدة",
-  "Collapse unit": "طي الوحدة",
-
-  "Unit 01: Foundations of User Experience & User Research": "الوحدة 01: أساسيات تجربة المستخدم وأبحاث المستخدم",
-  "4 lessons • 8 research exercises": "4 دروس • 8 تمارين بحثية",
-  "Unit 02: Information Architecture & Wireframing": "الوحدة 02: هندسة المعلومات والإطارات السلكية",
-  "5 lessons • 10 interactive models": "5 دروس • 10 نماذج تفاعلية",
-  "Unit 03: Auto Layout & Design Systems": "الوحدة 03: التخطيط التلقائي وأنظمة التصميم",
-  "Week 4 of 6 • 4 lessons • 7 design challenges": "الأسبوع 4 من 6 • 4 دروس • 7 تحديات تصميم",
-  "Unit 04: Usability Testing & Experience Evaluation": "الوحدة 04: اختبار قابلية الاستخدام وتقييم التجربة",
-  "3 lessons • 4 live testing sessions": "3 دروس • 4 جلسات اختبار مباشرة",
-
-  "100% Completed": "مكتملة 100%",
-  "Active Sprint": "السبرنت النشط",
-  Upcoming: "قادمة",
-
-  // Lessons
-  "Lesson 3.1: Mental Models & Atomic Design Principles": "الدرس 3.1: النماذج الذهنية ومبادئ التصميم الذري",
-  "Lesson 3.2: Building Responsive Components with Auto Layout": "الدرس 3.2: بناء مكونات متجاوبة باستخدام التخطيط التلقائي",
-  "Lesson 3.3: Interactive Variants & Micro-interactions in Figma": "الدرس 3.3: المتغيرات التفاعلية والتفاعلات الدقيقة في Figma",
-  "Lesson 3.4: WCAG AA Color Accessibility & Design Tokens": "الدرس 3.4: إتاحة الألوان وفق WCAG AA ورموز التصميم",
-
-  "Mental Models & Atomic Design Principles": "النماذج الذهنية ومبادئ التصميم الذري",
-  "Building Responsive Components with Auto Layout": "بناء مكونات متجاوبة باستخدام التخطيط التلقائي",
-  "Interactive Variants & Micro-interactions in Figma": "المتغيرات التفاعلية والتفاعلات الدقيقة في Figma",
-  "WCAG AA Color Accessibility & Design Tokens": "إتاحة الألوان وفق WCAG AA ورموز التصميم",
-
-  "Unit 03 / Lesson 3.1": "الوحدة 03 / الدرس 3.1",
-  "Unit 03 / Lesson 3.2": "الوحدة 03 / الدرس 3.2",
-  "Unit 03 / Lesson 3.3": "الوحدة 03 / الدرس 3.3",
-  "Unit 03 / Lesson 3.4": "الوحدة 03 / الدرس 3.4",
-
-  Published: "منشور",
-  "In Review": "قيد المراجعة",
-  Draft: "مسودة",
-
-  // Challenges inside the lesson tree
-  "Challenge 1: Button Variant Matrix": "التحدي 1: مصفوفة متغيرات الأزرار",
-  "Challenge 2: Responsive Navigation Bar": "التحدي 2: شريط تنقل متجاوب",
-  "Challenge 3: Mobile Fintech Interaction": "التحدي 3: تفاعل تطبيق مالي على الجوال",
-  Medium: "متوسط",
-  Advanced: "متقدم",
-  Applied: "تطبيقي",
-  Intermediate: "متوسط",
+  // Units and lessons
+  "{units} units • {lessons} lessons • {problems} activities": "{units} وحدات • {lessons} دروس • {problems} أنشطة",
+  "Add unit": "إضافة وحدة",
+  "Edit unit": "تعديل الوحدة",
+  "No units yet for this subject and grade. Add your first unit to start the plan.":
+    "لا توجد وحدات لهذه المادة والصف بعد. أضف وحدتك الأولى لتبدأ الخطة.",
+  "Unit {n}: {title}": "الوحدة {n}: {title}",
+  "{lessons} lessons • {problems} activities": "{lessons} دروس • {problems} أنشطة",
+  "Lesson {n}: {title}": "الدرس {n}: {title}",
+  "Lesson {n}": "الدرس {n}",
+  "Challenge {n}: {title}": "التحدي {n}: {title}",
+  "Add a lesson to this unit": "إضافة درس لهذه الوحدة",
+  "Published": "منشور",
+  "Draft": "مسودة",
 
   // Submissions
-  "Active Unit Challenge Submissions": "تسليمات تحديات الوحدة النشطة",
-  "Live Feed": "البث المباشر",
-  "Cohort Riyadh 9A": "دفعة الرياض 9A",
-  "Cohort Jeddah 9B": "دفعة جدة 9B",
-  "{pct}% on time": "{pct}% في الموعد",
+  "Recent Assignment Submissions": "أحدث تسليمات الواجبات",
+  "All assignments": "كل الواجبات",
+  "{pct}% submitted": "سلّم {pct}%",
 
   // Lesson details
-  "Edit Content": "تعديل المحتوى",
-  "Publish to Cohorts 9A & 9B": "نشر للدفعتين 9A و 9B",
-  "Lesson details will appear here once the lesson is set up.": "ستظهر تفاصيل الدرس هنا بعد إعداده.",
-
+  "Create a lesson to see its details, video and activities here.": "أنشئ درساً لترى تفاصيله والفيديو والأنشطة هنا.",
+  "Edit Lesson": "تعديل الدرس",
+  "Share with Students": "مشاركة مع الطلاب",
+  "Publish to Students": "نشر للطلاب",
+  "Lesson published: your students can see it now.": "تم نشر الدرس: يمكن لطلابك رؤيته الآن.",
+  "Link to the students' lesson page copied.": "تم نسخ رابط صفحة الدرس للطلاب.",
   "Targeted Competencies:": "الكفاءات المستهدفة:",
-  "Nested Architecture": "البنية المتداخلة",
-  "Multi-level variant structure with instant property swap.": "بنية متغيرات متعددة المستويات مع تبديل فوري للخصائص.",
-  "Accessibility Standards": "معايير الإتاحة",
-  "Visual focus and pressed state styling compliant with WCAGAA.": "تنسيق حالتي التركيز المرئي والضغط متوافق مع WCAG AA.",
-  "Motion Physics": "فيزياء الحركة",
-  "Spring physics curves calibrated via Smart Animate for realistic motion feel.": "منحنيات الفيزياء النابضية مضبوطة عبر Smart Animate لإحساس حركة واقعي.",
+  "{n} activities": "{n} أنشطة",
+  "Lesson Video": "فيديو الدرس",
+  "No video for this lesson yet": "لا يوجد فيديو لهذا الدرس بعد",
+  "Lesson Activities & Resources": "أنشطة الدرس وموارده",
+  "Add activity": "إضافة نشاط",
+  "Edit activity": "تعديل النشاط",
+  "No activities yet. Add a practice problem for this lesson.": "لا توجد أنشطة بعد. أضف مسألة تدريبية لهذا الدرس.",
+  "{n} steps": "{n} خطوات",
+  "{n} hints": "{n} تلميحات",
 
-  "Lesson Walkthrough Video": "فيديو شرح الدرس",
-  "Duration: {time} mins": "المدة: {time} دقيقة",
-  "Instructor Preview Video": "فيديو معاينة المدرّس",
-  "Play video": "تشغيل الفيديو",
-
-  "Three Figma Design Challenges": "ثلاثة تحديات تصميم في Figma",
-  "Open in Figma (.fig)": "فتح في Figma (.fig)",
-  "Design Challenge Editor": "محرر تحدي التصميم",
-  "Challenge settings": "إعدادات التحدي",
-
-  "Button Variant Matrix": "مصفوفة متغيرات الأزرار",
-  "Build a complete 4-size, 5-state interactive button system (Default, Hover, Pressed, Focused, Disabled) with leading/trailing icon swap.":
-    "ابنِ نظام أزرار تفاعلياً كاملاً بأربعة أحجام وخمس حالات (افتراضي، تمرير، ضغط، تركيز، معطّل) مع تبديل الأيقونة الأمامية/الخلفية.",
-  "Responsive Navigation Bar": "شريط تنقل متجاوب",
-  "Mobile-to-desktop adaptive navigation using Auto Layout Hug & Fill with animated dropdown.":
-    "تنقل متكيف من الجوال إلى سطح المكتب باستخدام Hug وFill في التخطيط التلقائي مع قائمة منسدلة متحركة.",
-  "Mobile Fintech Flow Micro-interaction": "تفاعل دقيق لمسار تطبيق مالي على الجوال",
-  "Interactive money transfer simulation with 3D haptic card flip and transaction confirmation loop.":
-    "محاكاة تفاعلية لتحويل الأموال مع قلب البطاقة ثلاثي الأبعاد باللمس الاهتزازي وحلقة تأكيد المعاملة.",
-  "Est: {m} mins": "المدة التقديرية: {m} دقيقة",
-  "{p} pts": "{p} نقطة",
+  // Dialogs
+  "Write the title in Arabic, English or both.": "اكتب العنوان بالعربية أو الإنجليزية أو كليهما.",
+  "Title (Arabic)": "العنوان (بالعربية)",
+  "Title (English)": "العنوان (بالإنجليزية)",
+  "Description (Arabic)": "الوصف (بالعربية)",
+  "Description (English)": "الوصف (بالإنجليزية)",
+  "Summary (Arabic)": "الملخص (بالعربية)",
+  "Summary (English)": "الملخص (بالإنجليزية)",
+  "Add a unit first, then create its lessons.": "أضف وحدة أولاً، ثم أنشئ دروسها.",
+  "Unit": "الوحدة",
+  "A practice problem the students solve in this lesson.": "مسألة تدريبية يحلّها الطلاب في هذا الدرس.",
+  "Question (Arabic)": "السؤال (بالعربية)",
+  "Question (English)": "السؤال (بالإنجليزية)",
+  "Topic": "الموضوع",
+  "Other accepted answers (one per line)": "إجابات أخرى مقبولة (واحدة في كل سطر)",
+  "Hints (one per line)": "التلميحات (واحد في كل سطر)",
 };
 
 export default curriculum;
