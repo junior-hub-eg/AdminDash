@@ -129,7 +129,9 @@ export interface NewMentor {
   photoUrl?: string;
 }
 
-export const getAdminOverview = () => api.get<AdminOverview>("/api/v1/admin/overview");
+/** The dashboard for the last 7, 14, 30 or 90 days: daily activity, and active students against the period before. */
+export const getAdminOverview = (days: DashboardPeriod = 7) => api.get<AdminOverview>(`/api/v1/admin/overview?days=${days}`);
+export type DashboardPeriod = 7 | 14 | 30 | 90;
 export const getAdminStudents = () => api.get<AdminStudent[]>("/api/v1/admin/students");
 /** Adds an independent student whose account is active right away (the admin sets the first password). */
 export const addStudent = (body: { fullName: string; email: string; password: string; gender: "Male" | "Female"; phone?: string }) =>

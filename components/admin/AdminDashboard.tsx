@@ -1,7 +1,7 @@
 "use client";
 
 import { activityText } from "@/lib/activity-text";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import {
@@ -47,6 +47,7 @@ import {
   rejectSignup,
   rejectTrackRequest,
   type AdminOverview,
+  type DashboardPeriod,
   type AdminSquad,
   type PlatformActivity,
 } from "@/lib/admin-api";
@@ -125,6 +126,27 @@ const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
 
 const weekday = (date: string) => new Date(`${date}T00:00:00`).toLocaleDateString(dateLocale(), { weekday: "short" });
+const shortDate = (date: string) => new Date(`${date}T00:00:00`).toLocaleDateString(dateLocale("en-GB"), { day: "numeric", month: "short" });
+/** Day names for a week, dates for longer periods. */
+const dayLabel = (date: string, count: number) => (count <= 7 ? weekday(date) : shortDate(date));
+
+const PERIODS: { days: DashboardPeriod; label: string }[] = [
+  { days: 7, label: tk("Last 7 Days") },
+  { days: 14, label: tk("Last 14 Days") },
+  { days: 30, label: tk("Last 30 Days") },
+  { days: 90, label: tk("Last 90 Days") },
+];
+const PERIOD_KEY = "jh_admin_dashboard_days";
+
+const noSubscribe = () => () => {};
+function readSavedPeriod(): DashboardPeriod {
+  try {
+    const saved = Number(localStorage.getItem(PERIOD_KEY));
+    return PERIODS.some((p) => p.days === saved) ? (saved as DashboardPeriod) : 7;
+  } catch {
+    return 7;
+  }
+}
 
 /** A round picture, or the person's initials when there is none. */
 function Avatar({ name, src, className = "" }: { name: string; src?: string | null; className?: string }) {
@@ -216,11 +238,14 @@ function ActivityChart({ w, h, days, label, peakLabel }: { w: number; h: number;
         {[0, 0.5, 1].map((f) => (
           <line key={f} x1={L} x2={w - R} y1={y(f * max)} y2={y(f * max)} stroke="#e8eef4" strokeDasharray="4 5" />
         ))}
-        {days.map((d, i) => (
-          <text key={d.date} x={x(i)} y={h - 8} textAnchor={i === 0 ? "start" : i === n ? "end" : "middle"} fontSize="11" fill="#6b7686">
-            {weekday(d.date)}
-          </text>
-        ))}
+        {days.map((d, i) =>
+          // At most about 7 labels, always the first and the last day.
+          days.length <= 7 || i === n || i % Math.ceil(days.length / 7) === 0 ? (
+            <text key={d.date} x={x(i)} y={h - 8} textAnchor={i === 0 ? "start" : i === n ? "end" : "middle"} fontSize="11" fill="#6b7686">
+              {dayLabel(d.date, days.length)}
+            </text>
+          ) : null,
+        )}
         <path d={area(A)} fill="url(#dashA)" />
         <path d={area(B)} fill="url(#dashB)" />
         <path d={line(A)} fill="none" stroke={LESSONS_COLOR} strokeWidth="2.5" strokeLinecap="round" />
@@ -238,7 +263,7 @@ function ActivityChart({ w, h, days, label, peakLabel }: { w: number; h: number;
           className="pointer-events-none absolute top-0 -translate-x-1/2 whitespace-nowrap rounded-[0.5em] bg-[#1a2b57] px-[0.9em] py-[0.4em] text-center text-[0.72em] text-white shadow-lg"
           style={{ left: tipX }}
         >
-          <span className="block font-semibold text-[#5eead4]">{weekday(days[peak].date)}</span>
+          <span className="block font-semibold text-[#5eead4]">{dayLabel(days[peak].date, days.length)}</span>
           {peakLabel(days[peak])}
         </div>
       )}
@@ -590,7 +615,23 @@ export default function AdminDashboard() {
   const { t } = useI18n();
   const [chartRef, chartBox] = useBox<HTMLDivElement>();
   const [donutRef, donutBox] = useBox<HTMLDivElement>();
-  const { data: overview, error, reload } = useAdminData(getAdminOverview, tk("We couldn't load the dashboard. Please try again."));
+  // The saved choice is read on the client only (the server renders 7), so the first render matches.
+  const savedDays = useSyncExternalStore(noSubscribe, readSavedPeriod, () => 7 as DashboardPeriod);
+  const [chosenDays, setChosenDays] = useState<DashboardPeriod | null>(null);
+  const days = chosenDays ?? savedDays;
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const choosePeriod = (d: DashboardPeriod) => {
+    setChosenDays(d);
+    setPeriodOpen(false);
+    try {
+      localStorage.setItem(PERIOD_KEY, String(d));
+    } catch {
+      // The choice is only a convenience; without storage it resets on the next visit.
+    }
+  };
+  const loadOverview = useCallback(() => getAdminOverview(days), [days]);
+  const { data: overview, error, reload } = useAdminData(loadOverview, tk("We couldn't load the dashboard. Please try again."));
+  const periodLabel = PERIODS.find((p) => p.days === days)!.label;
   const report = useAdminData(getSystemReport, tk("We couldn't load the dashboard. Please try again."));
   const squads = useAdminData(getAdminSquads, tk("We couldn't load the squads. Please try again."));
   const tracks = useAdminData(getAdminTracks, tk("We couldn't load the tracks. Please try again."));
@@ -639,10 +680,31 @@ export default function AdminDashboard() {
           <p className="text-[0.85em] text-[#5b6b7c]">{t("Monitor learning activity and manage your community.")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-[0.7em] text-[0.82em]">
-          {/* The overview API covers the last 7 days, so the period pill says so. */}
-          <span className={pill}>
-            <CalendarDays className="size-[1.1em]" /> {t("Last 7 Days")} <ChevronDown className="size-[1em] text-[#8a97a6]" />
-          </span>
+          {/* The period the activity chart and the active-students comparison cover. */}
+          <div className="relative">
+            <button type="button" aria-haspopup="listbox" aria-expanded={periodOpen} onClick={() => setPeriodOpen((o) => !o)} className={`${pill} hover:bg-[#f1f6fb]`}>
+              <CalendarDays className="size-[1.1em]" /> {t(periodLabel)} <ChevronDown className="size-[1em] text-[#8a97a6]" />
+            </button>
+            {periodOpen && (
+              <>
+                <button type="button" aria-label={t("Close menu")} className="fixed inset-0 z-20 cursor-default" onClick={() => setPeriodOpen(false)} />
+                <ul role="listbox" aria-label={t("Period")} className="absolute end-0 top-full z-30 mt-[0.4em] w-[12em] overflow-hidden rounded-[0.8em] bg-white py-[0.3em] shadow-xl ring-1 ring-[#e6edf3]">
+                  {PERIODS.map((p) => (
+                    <li key={p.days} role="option" aria-selected={p.days === days}>
+                      <button
+                        type="button"
+                        onClick={() => choosePeriod(p.days)}
+                        className={`flex w-full items-center justify-between px-[1em] py-[0.55em] text-start hover:bg-[#f1f6fb] ${p.days === days ? "font-semibold text-[#0b89a6]" : "text-[#14365a]"}`}
+                      >
+                        {t(p.label)}
+                        {p.days === days && <Check className="size-[1em]" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
           <Link href={"/admin/reports" as Route} className={`${pill} hover:bg-[#f1f6fb]`}>
             <Share className="size-[1.05em]" /> {t("Export Report")}
           </Link>
@@ -691,7 +753,7 @@ export default function AdminDashboard() {
               </>
             )
           }
-          hint={change == null ? t("this week") : t("active vs last week")}
+          hint={change == null ? t("in the last {days} days", { days }) : t("active vs the {days} days before", { days })}
           icon={<UsersRound className="size-[1.15em]" />}
         />
         <StatTile
@@ -750,7 +812,7 @@ export default function AdminDashboard() {
                   <span className="rounded-[0.4em] bg-[#dff3fb] px-[0.6em] py-[0.15em] text-[0.62em] font-medium text-[#0b6f86]">{t("Live Telemetry")}</span>
                 </h2>
                 <p className="mt-[0.2em] max-w-[26em] text-[0.78em] text-[#6b7686]">
-                  {t("Daily lessons passed vs squad tasks done over the last 7 days")}
+                  {t("Daily lessons passed vs squad tasks done over the last {days} days", { days })}
                 </p>
               </div>
               <ul className="flex shrink-0 flex-wrap gap-x-[1.6em] gap-y-[0.3em] text-[0.72em] text-[#14365a]">
@@ -765,7 +827,7 @@ export default function AdminDashboard() {
                   {peakDay ? peakDay.lessonsPassed + peakDay.tasksDone : dash}
                   {peakDay && (
                     <span className="inline-flex items-center text-[0.65em] font-semibold text-[#0f8a7a]">
-                      <ArrowUp className="size-[1em]" /> {weekday(peakDay.date)}
+                      <ArrowUp className="size-[1em]" /> {dayLabel(peakDay.date, week.length)}
                     </span>
                   )}
                 </dd>
@@ -775,7 +837,7 @@ export default function AdminDashboard() {
                 <dd className="text-[1.05em] font-semibold text-[#0b1b2b]">{overview ? lessonsWeek : dash}</dd>
               </div>
               <div>
-                <dt className="text-[0.72em] text-[#5b6b7c]">{t("Weekly Active Rate")}</dt>
+                <dt className="text-[0.72em] text-[#5b6b7c]">{t("Active Rate")}</dt>
                 <dd className="text-[1.05em] font-semibold text-[#0b1b2b]">
                   {overview && overview.totalStudents ? `${Math.round((overview.activeStudents / overview.totalStudents) * 100)}%` : dash}
                 </dd>
