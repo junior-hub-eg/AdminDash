@@ -10,6 +10,7 @@ import { adminUiB } from "./ar/admin-ui-b";
 import { adminUiC } from "./ar/admin-ui-c";
 import { adminUiD } from "./ar/admin-ui-d";
 import { adminUiE } from "./ar/admin-ui-e";
+import { adminPermissions } from "./ar/admin-permissions";
 import { auth } from "./ar/auth";
 import { backend } from "./ar/backend";
 import { calendar } from "./ar/calendar";
@@ -71,6 +72,7 @@ export const ar: Record<string, string> = {
   ...adminUiC,
   ...adminUiD,
   ...adminUiE,
+  ...adminPermissions,
   ...teacher,
   ...students,
   ...curriculum,

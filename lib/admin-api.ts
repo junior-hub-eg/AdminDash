@@ -157,6 +157,8 @@ export interface AdminAccount {
   isOwner: boolean;
   createdUtc: string;
   lastLoginUtc: string | null;
+  /** The admin's role in the Roles & Permissions matrix; null = System Admin. */
+  customRoleId: string | null;
 }
 
 /** Only the main admin can list and add admins (NOT_THE_OWNER otherwise). */
@@ -226,11 +228,15 @@ export const savePlatformSettings = (settings: PlatformSettings) => api.put<Plat
 
 /* ---------- Roles & permissions ---------- */
 
+/** What a role may do in one admin module; the API checks it on every admin request (26 Oct 2026). */
 export interface RolePermission {
   area: string;
   canView: boolean;
+  canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  canApprove: boolean;
+  canExport: boolean;
 }
 
 export interface AdminRole {
@@ -246,6 +252,22 @@ export const getAdminRoles = () => api.get<AdminRole[]>("/api/v1/admin/roles");
 /** The description is left as it is. */
 export const updateAdminRolePermissions = (role: AdminRole, permissions: RolePermission[]) =>
   api.put<AdminRole>(`/api/v1/admin/roles/${role.id}`, { name: role.name, permissions });
+
+/** The System Admin role always has full access; the API refuses changes to it (SYSTEM_ADMIN_LOCKED). */
+export const SYSTEM_ADMIN_ROLE = "System Admin";
+
+/** Gives an admin a role of the matrix; null = System Admin (full access). Only the main admin can. */
+export const assignAdminRole = (userId: string, customRoleId: string | null) =>
+  api.put<void>(`/api/v1/admin/users/${userId}/role`, { role: "Admin", customRoleId });
+
+export interface MyAdminPermissions {
+  /** The main admin and System Admins can do everything. */
+  fullAccess: boolean;
+  roleName: string;
+  permissions: RolePermission[];
+}
+
+export const getMyAdminPermissions = () => api.get<MyAdminPermissions>("/api/v1/admin/me/permissions");
 
 // ---------- Review notes (backend AdminManagementController, 25 Oct 2026) ----------
 

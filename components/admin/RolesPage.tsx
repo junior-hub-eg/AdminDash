@@ -20,7 +20,8 @@ import { ScreenHeader } from "./notifications/ScreenHeader";
 import { LoadState, useAdminData } from "./admin-data";
 import { AdminDialog, FIELD } from "./AdminPageFrame";
 import { RoleTabs } from "./roles/RoleTabs";
-import { PermissionsMatrix, type Right } from "./roles/PermissionsMatrix";
+import { PermissionsMatrix, RIGHTS, type Right } from "./roles/PermissionsMatrix";
+import { getAuditLog } from "@/lib/admin-security-api";
 import { AssignedAdministrators } from "./roles/AssignedAdministrators";
 import { PermissionAuditEvents } from "./roles/PermissionAuditEvents";
 
@@ -36,6 +37,20 @@ export default function RolesPage() {
   const [report, setReport] = useState<SystemReport | null>(null);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  /** Bumped after every saved change, so the audit list and its count load again. */
+  const [changes, setChanges] = useState(0);
+  const [changeCount, setChangeCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getAuditLog({ module: "Roles", pageSize: 1 }).then(
+      (r) => active && setChangeCount(r.total),
+      () => {},
+    );
+    return () => {
+      active = false;
+    };
+  }, [changes]);
 
   useEffect(() => {
     let active = true;
@@ -62,7 +77,7 @@ export default function RolesPage() {
     }
   }
 
-  /** Every click on View / Edit / Delete is saved at once. */
+  /** Every click in the matrix is saved at once. */
   async function save(permissions: RolePermission[]) {
     if (!selected || saving) return;
     const before = roles;
@@ -77,6 +92,7 @@ export default function RolesPage() {
       setSaveError(errorMessage(e, t("Could not save the permissions.")));
     } finally {
       setSaving(false);
+      setChanges((n) => n + 1);
     }
   }
 
@@ -87,7 +103,8 @@ export default function RolesPage() {
   const toggleRead = () => {
     if (!selected) return;
     const allOn = selected.permissions.every((p) => p.canView);
-    void save(selected.permissions.map((p) => (allOn ? { ...p, canView: false, canEdit: false, canDelete: false } : { ...p, canView: true })));
+    const none = Object.fromEntries(RIGHTS.map((r) => [r, false]));
+    void save(selected.permissions.map((p) => (allOn ? { ...p, ...none } : { ...p, canView: true })));
   };
 
   return (
@@ -138,7 +155,12 @@ export default function RolesPage() {
           badgeTone="neutral"
           hint={t("Specific access scopes")}
         />
-        <StatCard label={t("Permission Changes")} icon={RefreshCcwDot} value="—" hint={t("Not recorded yet")} />
+        <StatCard
+          label={t("Permission Changes")}
+          icon={RefreshCcwDot}
+          value={changeCount === null ? "—" : changeCount.toLocaleString("en")}
+          hint={changeCount ? t("Recorded in the audit log") : t("Not recorded yet")}
+        />
       </StatGrid>
 
       {!data ? (
@@ -149,8 +171,8 @@ export default function RolesPage() {
             <RoleTabs roles={roles} selectedId={selected.id} onSelect={setSelectedId} onDelete={remove} deletingId={deletingId} />
             <PermissionsMatrix role={selected} saving={saving} error={saveError} onToggle={toggle} onToggleRead={toggleRead} onDiscard={reload} />
             <div className="grid items-stretch gap-[1.2em] lg:grid-cols-2">
-              <AssignedAdministrators />
-              <PermissionAuditEvents />
+              <AssignedAdministrators roles={roles} onChanged={() => setChanges((n) => n + 1)} />
+              <PermissionAuditEvents key={changes} />
             </div>
           </>
         )
@@ -187,7 +209,7 @@ function CreateRoleDialog({ areas, onClose, onCreated }: { areas: string[]; onCl
         await createAdminRole({
           name: name.trim(),
           description: description.trim(),
-          permissions: areas.map((area) => ({ area, canView: true, canEdit: false, canDelete: false })),
+          permissions: areas.map((area) => ({ area, canView: true, canCreate: false, canEdit: false, canDelete: false, canApprove: false, canExport: false })),
         }),
       );
       onClose();
