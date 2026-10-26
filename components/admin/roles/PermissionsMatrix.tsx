@@ -5,37 +5,47 @@ import {
   BellRing,
   ChartLine,
   CircleCheck,
+  Clock,
   Compass,
   Folder,
+  Gift,
+  Languages,
   type LucideIcon,
   LayoutGrid,
+  Lock,
   Settings,
   Shield,
   ShieldCheck,
   Smile,
+  UserRound,
   Users,
   UsersRound,
 } from "lucide-react";
-import type { AdminRole, RolePermission } from "@/lib/admin-api";
+import { SYSTEM_ADMIN_ROLE, type AdminRole, type RolePermission } from "@/lib/admin-api";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
 import { PANEL } from "../page-parts";
 
-export type Right = "canView" | "canEdit" | "canDelete";
-type Col = { key: string; label: string; real?: Right };
+export type Right = "canView" | "canCreate" | "canEdit" | "canDelete" | "canApprove" | "canExport";
+export const RIGHTS: Right[] = ["canView", "canCreate", "canEdit", "canDelete", "canApprove", "canExport"];
 
-/** View, Edit and Delete are saved by the API. Create, Approve and Export are not stored yet. */
-const COLS: Col[] = [
-  { key: "view", label: tk("View"), real: "canView" },
-  { key: "create", label: tk("Create") },
-  { key: "edit", label: tk("Edit"), real: "canEdit" },
-  { key: "delete", label: tk("Delete"), real: "canDelete" },
-  { key: "approve", label: tk("Approve") },
-  { key: "export", label: tk("Export") },
+/** Every action is saved by the API and checked on the admin endpoints (26 Oct 2026). */
+const COLS: { key: Right; label: string }[] = [
+  { key: "canView", label: tk("View") },
+  { key: "canCreate", label: tk("Create") },
+  { key: "canEdit", label: tk("Edit") },
+  { key: "canDelete", label: tk("Delete") },
+  { key: "canApprove", label: tk("Approve") },
+  { key: "canExport", label: tk("Export") },
 ];
 
 /** What each platform module covers (matched against the area name the API returns). */
 const AREAS: { match: string; sub: string; icon: LucideIcon }[] = [
+  { match: "dashboard", sub: tk("Platform overview and recent activity"), icon: LayoutGrid },
+  { match: "pending", sub: tk("Sign-ups, mentor and track change requests"), icon: Clock },
+  { match: "profile", sub: tk("Your own account and password"), icon: UserRound },
+  { match: "reward", sub: tk("XP rules, badges, leaderboards"), icon: Gift },
+  { match: "grammar", sub: tk("Grammar topics and corrections"), icon: Languages },
   { match: "student", sub: tk("Profiles, submissions, grades"), icon: Users },
   { match: "squad", sub: tk("Squad formations, sprint boards"), icon: UsersRound },
   { match: "mentor", sub: tk("Office hours, mentor contracts"), icon: Smile },
@@ -56,10 +66,11 @@ const areaInfo = (area: string) => AREAS.find((x) => area.toLowerCase().includes
 
 /** The scope chip, from the rights the role really has on the module. */
 function scope(p: RolePermission): { label: string; tone: string } {
-  if (p.canView && p.canEdit && p.canDelete) return { label: tk("Full Access"), tone: "bg-[#e6eefb] text-[#0b6f86]" };
-  if (p.canView && p.canEdit) return { label: tk("View & Edit"), tone: "bg-[#e6eefb] text-[#0b6f86]" };
-  if (p.canView && !p.canEdit && !p.canDelete) return { label: tk("Read-Only"), tone: "bg-[#eef2f7] text-[#3d4f61]" };
-  if (!p.canView && !p.canEdit && !p.canDelete) return { label: tk("No Access"), tone: "bg-[#fde8e8] text-[#b83232]" };
+  const on = RIGHTS.filter((r) => p[r]);
+  if (on.length === RIGHTS.length) return { label: tk("Full Access"), tone: "bg-[#e6eefb] text-[#0b6f86]" };
+  if (on.length === 0) return { label: tk("No Access"), tone: "bg-[#fde8e8] text-[#b83232]" };
+  if (on.length === 1 && p.canView) return { label: tk("Read-Only"), tone: "bg-[#eef2f7] text-[#3d4f61]" };
+  if (on.length === 2 && p.canView && p.canEdit) return { label: tk("View & Edit"), tone: "bg-[#e6eefb] text-[#0b6f86]" };
   return { label: tk("Custom Access"), tone: "bg-[#eef2f7] text-[#3d4f61]" };
 }
 
@@ -80,6 +91,8 @@ export function PermissionsMatrix({
   onDiscard: () => void;
 }) {
   const t = useT();
+  /** The System Admin role always keeps full access, so nobody locks the admins out. */
+  const locked = role.isSystemRole && role.name === SYSTEM_ADMIN_ROLE;
 
   return (
     <section className={`${PANEL} min-w-0 overflow-hidden`}>
@@ -102,7 +115,7 @@ export function PermissionsMatrix({
           <button
             type="button"
             onClick={onToggleRead}
-            disabled={saving || role.permissions.length === 0}
+            disabled={saving || locked || role.permissions.length === 0}
             className="rounded-[0.5em] bg-[#eef3fb] px-[0.9em] py-[0.5em] font-semibold text-[#0b1b2b] hover:bg-[#e6eefb] disabled:cursor-wait disabled:opacity-60"
           >
             {t("Toggle Read Access")}
@@ -110,6 +123,12 @@ export function PermissionsMatrix({
           <span className="border-s border-[#c9d2dc] ps-[0.8em] font-medium text-[#3d4f61]">{role.meta}</span>
         </div>
       </header>
+
+      {locked && (
+        <p className="mx-[1.3em] mb-[0.8em] flex items-center gap-[0.5em] rounded-[0.6em] bg-[#eef3fb] px-[1em] py-[0.5em] text-[0.75em] font-semibold text-[#0b6f86]">
+          <Lock className="size-[1.1em] shrink-0" /> {t("System Admin always keeps full access, so no admin can be locked out.")}
+        </p>
+      )}
 
       {error && (
         <p role="alert" className="mx-[1.3em] mb-[0.8em] rounded-[0.6em] bg-[#fdecec] px-[1em] py-[0.5em] text-[0.75em] font-semibold text-[#b83232]">
@@ -154,21 +173,7 @@ export function PermissionsMatrix({
                     </div>
                   </td>
                   {COLS.map((c) => {
-                    if (!c.real) {
-                      return (
-                        <td key={c.key} className="px-[0.6em] text-center">
-                          <span
-                            role="checkbox"
-                            aria-checked={false}
-                            aria-disabled
-                            aria-label={`${t(c.label)} - ${t(p.area)} (${t("Coming soon")})`}
-                            title={t("Coming soon")}
-                            className="inline-block size-[1.3em] cursor-not-allowed rounded-[0.25em] border-2 border-[#dfe5ec] bg-[#f4f6f9]"
-                          />
-                        </td>
-                      );
-                    }
-                    const on = p[c.real];
+                    const on = p[c.key];
                     return (
                       <td key={c.key} className="px-[0.6em] text-center">
                         <button
@@ -176,9 +181,10 @@ export function PermissionsMatrix({
                           role="checkbox"
                           aria-checked={on}
                           aria-label={`${t(c.label)} - ${t(p.area)}`}
-                          disabled={saving}
-                          onClick={() => onToggle(p.area, c.real!)}
-                          className={`size-[1.3em] rounded-[0.25em] border-2 align-middle disabled:cursor-wait ${
+                          disabled={saving || locked}
+                          title={locked ? t("System Admin always keeps full access, so no admin can be locked out.") : undefined}
+                          onClick={() => onToggle(p.area, c.key)}
+                          className={`size-[1.3em] rounded-[0.25em] border-2 align-middle disabled:cursor-wait ${locked ? "disabled:cursor-not-allowed disabled:opacity-70" : ""} ${
                             on ? "border-[#06b6d4] bg-[#06b6d4]" : "border-[#9aa7b5] bg-white hover:border-[#06b6d4]"
                           }`}
                         />

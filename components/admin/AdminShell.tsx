@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { landingFont } from "@/components/Landing/font";
-import { APPROVALS_CHANGED, getApprovals, getMentorRequests, getTrackChangeRequests, getTrackRequests } from "@/lib/admin-api";
+import { APPROVALS_CHANGED, getApprovals, getMyAdminPermissions, type MyAdminPermissions, getMentorRequests, getTrackChangeRequests, getTrackRequests } from "@/lib/admin-api";
 import { getUnreadNotificationCount } from "@/lib/notifications-api";
 import { useI18n } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
@@ -52,34 +52,35 @@ const AVATAR_FIT = {
   posY: 0, // % up/down shift of the picture (0 = shows the top of the cap)
 };
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
+/** `area` is the module of the Roles & Permissions matrix; the item is hidden when the admin's role cannot view it. */
+type NavItem = { href: string; label: string; icon: LucideIcon; area?: string };
 
 /** Same order, labels and icons as the Figma sidebar (Frame 2147225918). */
 const NAV_GROUPS: NavItem[][] = [
   [
-    { href: "/admin/dashboard", label: tk("Dashboard"), icon: LayoutGrid },
-    { href: "/admin/students", label: tk("Student Management"), icon: GraduationCap },
-    { href: "/admin/squads", label: tk("Squad Management"), icon: Users },
+    { href: "/admin/dashboard", label: tk("Dashboard"), icon: LayoutGrid, area: "Dashboard" },
+    { href: "/admin/students", label: tk("Student Management"), icon: GraduationCap, area: "Student Management" },
+    { href: "/admin/squads", label: tk("Squad Management"), icon: Users, area: "Squads" },
   ],
   [
-    { href: "/admin/mentors", label: tk("Mentors Management"), icon: SquareTerminal },
-    { href: "/admin/tracks", label: tk("Track Management"), icon: Presentation },
-    { href: "/admin/notifications", label: tk("Notifications"), icon: Bell },
-    { href: "/admin/roles", label: tk("Roles & Permissions"), icon: Shield },
-    { href: "/admin/projects", label: tk("Projects"), icon: Folder },
-    { href: "/admin/certificates", label: tk("Certificates"), icon: FileBadge },
-    { href: "/admin/reports", label: tk("Analytics"), icon: ChartLine },
-    { href: "/admin/approvals", label: tk("Pending Requests"), icon: Clock },
-    { href: "/admin/profile", label: tk("User Profile"), icon: UserRound },
-    { href: "/admin/rewards", label: tk("Rewards"), icon: Gift },
-    { href: "/admin/security", label: tk("Security"), icon: KeyRound },
-    { href: "/admin/settings", label: tk("Settings"), icon: Settings },
+    { href: "/admin/mentors", label: tk("Mentors Management"), icon: SquareTerminal, area: "Mentors" },
+    { href: "/admin/tracks", label: tk("Track Management"), icon: Presentation, area: "Tracks" },
+    { href: "/admin/notifications", label: tk("Notifications"), icon: Bell, area: "Notifications" },
+    { href: "/admin/roles", label: tk("Roles & Permissions"), icon: Shield, area: "Roles & Permissions" },
+    { href: "/admin/projects", label: tk("Projects"), icon: Folder, area: "Projects" },
+    { href: "/admin/certificates", label: tk("Certificates"), icon: FileBadge, area: "Certificates" },
+    { href: "/admin/reports", label: tk("Analytics"), icon: ChartLine, area: "Analytics" },
+    { href: "/admin/approvals", label: tk("Pending Requests"), icon: Clock, area: "Pending Requests" },
+    { href: "/admin/profile", label: tk("User Profile"), icon: UserRound, area: "User Profile" },
+    { href: "/admin/rewards", label: tk("Rewards"), icon: Gift, area: "Rewards" },
+    { href: "/admin/security", label: tk("Security"), icon: KeyRound, area: "Security" },
+    { href: "/admin/settings", label: tk("Settings"), icon: Settings, area: "System Settings" },
   ],
 ];
 
 /** Pages that exist but are not in the design: kept reachable under "More". */
 const MORE_NAV: NavItem[] = [
-  { href: "/admin/grammar", label: tk("Grammar Coach"), icon: Languages },
+  { href: "/admin/grammar", label: tk("Grammar Coach"), icon: Languages, area: "Grammar Coach" },
 ];
 
 const OWNER_NAV: NavItem = { href: "/admin/admins", label: tk("Admins"), icon: ShieldCheck };
@@ -135,6 +136,22 @@ export function AdminShell({ children }: { children: ReactNode }) {
     setLastDrawerKey(drawerKey);
     setMobileOpen(false);
   }
+
+  // What the admin's role may see (Roles & Permissions); until it loads, every item shows.
+  const [perms, setPerms] = useState<MyAdminPermissions | null>(null);
+  useEffect(() => {
+    if (user?.role !== "admin") return;
+    let active = true;
+    getMyAdminPermissions().then(
+      (p) => active && setPerms(p),
+      () => {},
+    );
+    return () => {
+      active = false;
+    };
+  }, [user?.role, pathname]);
+  const canView = (item: NavItem) =>
+    !item.area || !perms || perms.fullAccess || perms.permissions.some((p) => p.area === item.area && p.canView);
 
   // Count the requests waiting for the admin (sign-ups, mentor changes, new tracks, track changes) on every page change.
   useEffect(() => {
@@ -208,7 +225,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   // The user's own picture if the API sends one, otherwise the cartoon character.
   const avatarSrc = (user as { avatarUrl?: string } | null)?.avatarUrl || AVATAR;
 
-  const moreItems = user?.isOwner ? [...MORE_NAV, OWNER_NAV] : MORE_NAV;
+  const moreItems = (user?.isOwner ? [...MORE_NAV, OWNER_NAV] : MORE_NAV).filter(canView);
   const moreActive = moreItems.some((item) => isActive(pathname, item.href));
   const showMore = moreOpen || moreActive;
 
@@ -310,7 +327,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           {NAV_GROUPS.map((group, gi) => (
             <div key={gi}>
               {gi > 0 && <hr className="mx-2.5 my-3 border-0 border-t border-[#14365a]/20" />}
-              <ul className="space-y-1">{group.map((item) => renderItem(item))}</ul>
+              <ul className="space-y-1">{group.filter(canView).map((item) => renderItem(item))}</ul>
             </div>
           ))}
 
