@@ -166,6 +166,18 @@ export default function CertificatePreview({
               <dd className="font-semibold text-[#0b1b2b]">{Math.round(c.score)}%</dd>
             </>
           )}
+          {c.courseTitle && (
+            <>
+              <dt className="text-[#5b6b7c]">{t("Course")}</dt>
+              <dd className="font-semibold text-[#0b1b2b]">{c.courseTitle}</dd>
+            </>
+          )}
+          {c.level && (
+            <>
+              <dt className="text-[#5b6b7c]">{t("Level")}</dt>
+              <dd className="font-semibold text-[#0b1b2b]">{t(c.level)}</dd>
+            </>
+          )}
           {c.squadName && (
             <>
               <dt className="text-[#5b6b7c]">{t("Squad")}</dt>

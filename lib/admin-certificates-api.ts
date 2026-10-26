@@ -5,7 +5,8 @@
  */
 import { api } from "@/lib/api-client";
 
-export type CertificateKind = "TrackCompletion" | "Capstone";
+/** CourseLevel: one finished level (lessons and exam) of a course, for example "HTML · Beginner Level". */
+export type CertificateKind = "TrackCompletion" | "Capstone" | "CourseLevel";
 export type CertificateStatus = "Pending" | "Issued" | "Revoked";
 
 export interface AdminCertificate {
@@ -30,6 +31,10 @@ export interface AdminCertificate {
   squadName: string | null;
   signerName: string | null;
   signerTitle: string | null;
+  /** The course of a CourseLevel certificate, for example "HTML". */
+  courseTitle?: string | null;
+  /** The finished level of a CourseLevel certificate: Beginner, Intermediate or Advanced. */
+  level?: string | null;
 }
 
 export interface AdminCertificateCounts {
