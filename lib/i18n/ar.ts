@@ -1,6 +1,7 @@
 import { account } from "./ar/account";
 import { admin } from "./ar/admin";
 import { adminManage } from "./ar/admin-manage";
+import { adminStudents } from "./ar/admin-students";
 import { adminUiA } from "./ar/admin-ui-a";
 import { adminUiB } from "./ar/admin-ui-b";
 import { adminUiC } from "./ar/admin-ui-c";
@@ -56,6 +57,7 @@ export const ar: Record<string, string> = {
   ...calendar,
   ...admin,
   ...adminManage,
+  ...adminStudents,
   ...adminUiA,
   ...adminUiB,
   ...adminUiC,

@@ -39,6 +39,13 @@ export interface AdminStudent {
   squadName: string | null;
   status: AdminStudentStatus;
   totalXp: number;
+  email: string | null;
+  grade: number | null;
+  schoolName: string | null;
+  /** Level in the active track; null without a track. */
+  level: TrackLevel | null;
+  joinedUtc: string | null;
+  squadId: string | null;
 }
 
 export interface AdminStudentDetail {
@@ -124,6 +131,9 @@ export interface NewMentor {
 
 export const getAdminOverview = () => api.get<AdminOverview>("/api/v1/admin/overview");
 export const getAdminStudents = () => api.get<AdminStudent[]>("/api/v1/admin/students");
+/** Adds an independent student whose account is active right away (the admin sets the first password). */
+export const addStudent = (body: { fullName: string; email: string; password: string; gender: "Male" | "Female"; phone?: string }) =>
+  api.post<AdminStudentDetail>("/api/v1/admin/students", body);
 export const getAdminStudent = (id: string) => api.get<AdminStudentDetail>(`/api/v1/admin/students/${id}`);
 /** Gives the student another mentor in the mentor's track. */
 export const changeStudentMentor = (id: string, mentorId: string) =>
