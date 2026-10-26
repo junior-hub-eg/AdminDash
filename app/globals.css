@@ -142,3 +142,71 @@ html[lang="ar"] body * { letter-spacing: 0 !important; }
     animation: none !important;
   }
 }
+
+/*
+  Reports: print / "Save as PDF" (components/report-kit/PrintLayout.tsx).
+  Only applies while a report page (.jh-report) is on screen: hides the sidebar, the top bar and every
+  print:hidden control, lets the page grow past the screen, A4 with colors kept, sections start on new
+  pages where marked (.jh-print-break) and stay together where they fit (.jh-print-section).
+  The page language and direction (lang/dir on <html>) carry over, so an Arabic page prints RTL.
+*/
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+  }
+
+  html:has(.jh-report),
+  html:has(.jh-report) body {
+    background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  html:has(.jh-report) * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html:has(.jh-report) aside[aria-label],
+  html:has(.jh-report) main > header {
+    display: none !important;
+  }
+
+  /* Every wrapper around the report: no fixed height, no inner scrolling, no padding meant for the top bar. */
+  html:has(.jh-report) body *:has(.jh-report) {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html:has(.jh-report) body *:has(> .jh-report) > [aria-hidden] {
+    display: none !important;
+  }
+
+  .jh-report {
+    gap: 5mm !important;
+    font-size: 11px !important;
+  }
+
+  .jh-report .jh-print-section {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #e6edf3;
+  }
+
+  .jh-report .jh-print-break {
+    break-before: page;
+  }
+
+  .jh-report .jh-print-header {
+    break-after: avoid;
+  }
+}

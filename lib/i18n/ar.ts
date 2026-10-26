@@ -38,6 +38,7 @@ import { adminGrammar } from "./ar/admin-grammar";
 import { adminCertificates } from "./ar/admin-certificates";
 import { teacherGrammar } from "./ar/teacher-grammar";
 import { mentorArea } from "./ar/mentor-area";
+import { adminReports } from "./ar/admin-reports";
 
 /** Arabic translations, keyed by the English text. `node scripts/i18n-check.mjs` lists missing ones. */
 export const ar: Record<string, string> = {
@@ -82,4 +83,5 @@ export const ar: Record<string, string> = {
   ...adminGrammar,
   ...adminCertificates,
   ...teacherGrammar,
+  ...adminReports,
 };

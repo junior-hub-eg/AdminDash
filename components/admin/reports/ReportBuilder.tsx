@@ -99,6 +99,7 @@ export function ReportBuilder({ data, tracks }: { data: BuilderData; tracks: Adm
       icon={SlidersHorizontal}
       title={t("Custom Report Builder")}
       description={t("Pick a scope and the sections you need, then download them as a spreadsheet.")}
+      className="print:hidden"
       aside={
         <span className="inline-flex items-center gap-[0.4em] text-[0.7em] text-[#5b6b7c]">
           {t("Built in your browser from live data")} <span className="size-[0.55em] rounded-full bg-[#14b8a6]" />
@@ -122,12 +123,6 @@ export function ReportBuilder({ data, tracks }: { data: BuilderData; tracks: Adm
           <span className="text-[0.7em] font-semibold text-[#5b6b7c]">{t("Export format")}</span>
           <select className={INPUT} defaultValue="csv">
             <option value="csv">{t("Spreadsheet (CSV)")}</option>
-            <option value="xlsx" disabled>
-              {t("Excel (XLSX)")} · {t("Coming soon")}
-            </option>
-            <option value="pdf" disabled>
-              PDF · {t("Coming soon")}
-            </option>
           </select>
         </label>
 
@@ -137,7 +132,7 @@ export function ReportBuilder({ data, tracks }: { data: BuilderData; tracks: Adm
           disabled={!ready || picked.length === 0}
           className="inline-flex h-[2.6em] items-center justify-center gap-[0.5em] rounded-[0.7em] bg-[#13233a] px-[1.4em] text-[0.82em] font-semibold text-white hover:bg-[#1c3150] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Play className="size-[1em] rtl:rotate-180" /> {t("Generate Dataset")}
+          <Play className="size-[1em] rtl:-scale-x-100" /> {t("Generate Dataset")}
         </button>
 
         <fieldset className="md:col-span-3">

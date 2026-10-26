@@ -4,21 +4,11 @@ import Link from "next/link";
 import { ArrowRight, CircleDashed } from "lucide-react";
 import type { AdminTrack } from "@/lib/admin-api";
 import { useT } from "@/lib/i18n/client";
-import { LoadState } from "../admin-data";
-import { CardFooter, Empty, fmt, Pill, Section } from "./ui";
+import { BarList, EmptyState, fmtNumber, ReportCard, StateBlock } from "@/components/report-kit";
+import { CardFooter, Pill } from "./ui";
 
-const BAR = ["#06b6d4", "#0e7490", "#0f766e", "#64748b", "#6b7280"];
-
-/** Course Completion by Track: each track's progress bar, best first. */
-export function TrackCompletion({
-  tracks,
-  error,
-  onRetry,
-}: {
-  tracks: AdminTrack[] | null;
-  error: string | null;
-  onRetry: () => void;
-}) {
+/** Course Completion by Track: each track's average syllabus progress, best first. */
+export function TrackCompletion({ tracks, error, onRetry }: { tracks: AdminTrack[] | null; error: string | null; onRetry: () => void }) {
   const t = useT();
   const sorted = [...(tracks ?? [])].sort((a, b) => b.progress - a.progress);
   const enrolled = sorted.reduce((a, tr) => a + tr.students, 0);
@@ -26,55 +16,39 @@ export function TrackCompletion({
   const pacing = enrolled ? Math.round(sorted.reduce((a, tr) => a + tr.progress * tr.students, 0) / enrolled) : null;
 
   return (
-    <Section
+    <ReportCard
       icon={CircleDashed}
       title={t("Course Completion by Track")}
       description={t("Average syllabus progress of the students in each track.")}
       aside={tracks && <Pill>{t("{count} tracks tracked", { count: sorted.length })}</Pill>}
       className="flex flex-col"
     >
-      {!tracks ? (
-        <LoadState error={error} onRetry={onRetry} />
-      ) : sorted.length === 0 ? (
-        <Empty icon={CircleDashed} title={t("No tracks to show")} className="mt-[1em]" />
-      ) : (
-        <ul className="mt-[1em] flex-1 space-y-[1em]">
-          {sorted.map((tr, i) => (
-            <li key={tr.id}>
-              <div className="flex items-center justify-between gap-[0.6em] text-[0.8em] font-semibold text-[#0b1b2b]">
-                <span className="flex min-w-0 items-center gap-[0.5em]">
-                  <span className="size-[0.6em] shrink-0 rounded-full" style={{ backgroundColor: BAR[Math.min(i, BAR.length - 1)] }} />
-                  <span className="truncate">{tr.name}</span>
-                </span>
-                <span dir="ltr">{tr.progress}%</span>
-              </div>
-              <div className="mt-[0.35em] h-[0.55em] overflow-hidden rounded-full bg-[#e8eef5]">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${Math.max(0, Math.min(100, tr.progress))}%`, backgroundColor: BAR[Math.min(i, BAR.length - 1)] }}
-                />
-              </div>
-              <div className="mt-[0.3em] flex justify-between gap-[0.6em] text-[0.68em] text-[#8a97a6]">
-                <span>{t("{count} enrolled", { count: fmt(tr.students) })}</span>
-                {i === 0 && sorted.length > 1 ? (
-                  <span className="font-semibold text-[#0b89a6]">{t("Top performing track")}</span>
-                ) : (
-                  <span>{t("{count} squads", { count: tr.squads })}</span>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
+      <div className="mt-[1em] flex-1">
+        {!tracks ? (
+          <StateBlock error={error} onRetry={onRetry} />
+        ) : sorted.length === 0 ? (
+          <EmptyState icon={CircleDashed} title={t("No tracks to show")} />
+        ) : (
+          <BarList
+            label={t("Course Completion by Track")}
+            items={sorted.map((tr) => ({
+              key: tr.id,
+              label: tr.name,
+              value: tr.progress,
+              href: `/admin/tracks/${tr.id}`,
+              hint: t("{count} enrolled · {squads} squads", { count: fmtNumber(tr.students), squads: tr.squads }),
+            }))}
+          />
+        )}
+      </div>
       <CardFooter>
         <span>
           {t("Average pacing")}: <b className="text-[#0b1b2b]">{pacing != null ? `${pacing}%` : "—"}</b>
         </span>
-        <Link href="/admin/tracks" className="inline-flex items-center gap-[0.3em] font-bold text-[#0b89a6] hover:underline">
+        <Link href="/admin/tracks" className="inline-flex items-center gap-[0.3em] font-bold text-[#0b89a6] hover:underline print:hidden">
           {t("Track details")} <ArrowRight className="size-[1em]" />
         </Link>
       </CardFooter>
-    </Section>
+    </ReportCard>
   );
 }
