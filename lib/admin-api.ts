@@ -252,6 +252,12 @@ export const updateAdminRolePermissions = (role: AdminRole, permissions: RolePer
 export type SquadRole = "Frontend" | "Backend" | "UIUX" | "AI" | "Testing" | "Data" | "Mobile" | "Gaming";
 export const SQUAD_ROLES: SquadRole[] = ["Frontend", "Backend", "UIUX", "AI", "Testing", "Data", "Mobile", "Gaming"];
 
+/** The squad seat of a track's students, as the backend sets it (LevelProgress.RoleFor): a Frontend student joins as Frontend. */
+export function squadRoleForTrack(trackCode: string): SquadRole {
+  const code = trackCode.toUpperCase();
+  return SQUAD_ROLES.find((r) => r.toUpperCase() === code && r !== "Gaming") ?? "Gaming";
+}
+
 export interface AdminSquadMember {
   studentId: string;
   fullName: string;

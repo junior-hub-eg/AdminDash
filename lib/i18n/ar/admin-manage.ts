@@ -424,4 +424,17 @@ export const adminManage: Record<string, string> = {
   "Unread notifications": "إشعارات غير مقروءة",
   "Pending approvals": "موافقات معلّقة",
   "Assistant conversations": "محادثات المساعد",
+  // Squad members (26 Oct 2026): the backend's errors and the closed-squad note.
+  "Students can only be added to a squad whose project is in progress.": "لا يمكن إضافة طلاب إلا لفريق مشروعه قيد التنفيذ.",
+  "This student already belongs to a squad.": "هذا الطالب في فريق بالفعل.",
+  "This student is not a current member of this squad.": "هذا الطالب ليس عضوًا حاليًا في هذا الفريق.",
+  "The student and squad must belong to the same school.": "يجب أن يكون الطالب والفريق من نفس المدرسة.",
+  "This squad has no seat for the selected role.": "لا يوجد مقعد في هذا الفريق للدور المختار.",
+  "All seats for this role have been filled.": "اكتملت كل مقاعد هذا الدور.",
+  "All seats in this squad have been filled.": "اكتملت كل مقاعد هذا الفريق.",
+  "This squad finished its project, so members can no longer be added, moved or removed.": "أنهى هذا الفريق مشروعه، لذلك لا يمكن إضافة أعضاء أو نقلهم أو إخراجهم.",
+  "This squad's project is in review, so members can no longer be added, moved or removed.": "مشروع هذا الفريق قيد المراجعة، لذلك لا يمكن إضافة أعضاء أو نقلهم أو إخراجهم.",
+  "A student joins a squad in the role of their own track.": "ينضم الطالب للفريق بدور مساره فقط.",
+  "The role follows the student's track.": "الدور يتحدد حسب مسار الطالب.",
+  "No student without a squad learns a track that has an open seat here.": "لا يوجد طالب بدون فريق في مسار له مقعد متاح هنا.",
 };

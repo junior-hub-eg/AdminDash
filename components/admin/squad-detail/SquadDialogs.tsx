@@ -7,6 +7,7 @@ import {
   addStudentToSquad,
   getSquadAvailableStudents,
   SQUAD_ROLES,
+  squadRoleForTrack,
   updateSquadProject,
   type AdminSquadFull,
   type AvailableSquadStudent,
@@ -206,7 +207,18 @@ export function AddMemberDialog({
   const [students, setStudents] = useState<AvailableSquadStudent[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [studentId, setStudentId] = useState("");
-  const [role, setRole] = useState<SquadRole>(squad.seats.find((s) => s.filled < s.needed)?.role ?? "Frontend");
+  // Only roles with an open seat; a squad without a seat plan takes any role.
+  const roles = squad.seats.length ? squad.seats.filter((s) => s.filled < s.needed).map((s) => s.role) : SQUAD_ROLES;
+  const [chosenRole, setChosenRole] = useState<SquadRole>(roles[0] ?? "Frontend");
+  // A student who learns a track joins in that track's role, so only students whose role has an open seat are listed.
+  const roleOf = (s: AvailableSquadStudent) => (s.trackCode ? squadRoleForTrack(s.trackCode) : null);
+  const fitting = students?.filter((s) => {
+    const r = roleOf(s);
+    return r === null ? roles.length > 0 : roles.includes(r);
+  });
+  const selected = students?.find((s) => s.id === studentId);
+  const trackRole = selected ? roleOf(selected) : null;
+  const role = trackRole ?? chosenRole;
   const { saving, error, run } = useSave(onClose);
 
   useEffect(() => {
@@ -236,7 +248,7 @@ export function AddMemberDialog({
         <Field label="Student">
           <select required value={studentId} onChange={(e) => setStudentId(e.target.value)} className={FIELD}>
             <option value="">{students ? t("Choose a student") : t("Loading")}</option>
-            {students?.map((s) => (
+            {fitting?.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.fullName}
                 {s.trackName ? ` · ${s.trackName}` : ""}
@@ -245,14 +257,24 @@ export function AddMemberDialog({
           </select>
         </Field>
         {students?.length === 0 && <p className="text-[#5b6b7c]">{t("Every student is already in a squad.")}</p>}
+        {!!students?.length && fitting?.length === 0 && roles.length > 0 && (
+          <p className="text-[#5b6b7c]">{t("No student without a squad learns a track that has an open seat here.")}</p>
+        )}
+        {roles.length === 0 && <p className="font-semibold text-[#b83232]">{t("All seats in this squad have been filled.")}</p>}
         <Field label="Role">
-          <select value={role} onChange={(e) => setRole(e.target.value as SquadRole)} className={FIELD}>
-            {SQUAD_ROLES.map((r) => (
+          <select
+            value={role}
+            onChange={(e) => setChosenRole(e.target.value as SquadRole)}
+            disabled={trackRole !== null}
+            className={`${FIELD} disabled:opacity-70`}
+          >
+            {(trackRole ? [trackRole] : roles).map((r) => (
               <option key={r} value={r}>
                 {t(r)}
               </option>
             ))}
           </select>
+          {trackRole && <span className="text-[0.72rem] font-normal text-[#5b6b7c]">{t("The role follows the student's track.")}</span>}
         </Field>
         <Footer saving={saving} error={error} onClose={onClose} label="Add Member" />
       </form>
