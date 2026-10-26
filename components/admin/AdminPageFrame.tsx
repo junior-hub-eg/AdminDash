@@ -77,11 +77,14 @@ export function AdminDialog({
   title,
   onClose,
   children,
+  wide = false,
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** A large dialog that scrolls (a board, a table) instead of a small form. */
+  wide?: boolean;
 }) {
   const { t } = useI18n();
 
@@ -110,7 +113,7 @@ export function AdminDialog({
         role="dialog"
         aria-modal="true"
         aria-label={t(title)}
-        className="relative w-full max-w-md rounded-2xl bg-white p-5 text-[#14365a] shadow-2xl"
+        className={`relative w-full rounded-2xl bg-white p-5 text-[#14365a] shadow-2xl ${wide ? "max-h-[90vh] max-w-5xl overflow-y-auto" : "max-w-md"}`}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-base font-bold">{t(title)}</h2>
