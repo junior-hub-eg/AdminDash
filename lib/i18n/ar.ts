@@ -1,3 +1,4 @@
+import { chat } from "./ar/chat";
 import { account } from "./ar/account";
 import { admin } from "./ar/admin";
 import { adminManage } from "./ar/admin-manage";
@@ -44,6 +45,7 @@ import { adminProjects } from "./ar/admin-projects";
 
 /** Arabic translations, keyed by the English text. `node scripts/i18n-check.mjs` lists missing ones. */
 export const ar: Record<string, string> = {
+  ...chat,
   // First, so the older dictionaries keep their own wording for the texts they share.
   ...mentorArea,
   ...common,

@@ -21,6 +21,8 @@ import {
   LoaderCircle,
   LogOut,
   Menu,
+  MessageCircle,
+  MessageSquareWarning,
   MoreHorizontal,
   Presentation,
   Search,
@@ -36,6 +38,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { landingFont } from "@/components/Landing/font";
 import { APPROVALS_CHANGED, getApprovals, getMyAdminPermissions, type MyAdminPermissions, getMentorRequests, getTrackChangeRequests, getTrackRequests } from "@/lib/admin-api";
 import { getUnreadNotificationCount } from "@/lib/notifications-api";
+import { ChatButton } from "@/components/chat/ChatButton";
 import { useI18n } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
 
@@ -66,6 +69,8 @@ const NAV_GROUPS: NavItem[][] = [
     { href: "/admin/mentors", label: tk("Mentors Management"), icon: SquareTerminal, area: "Mentors" },
     { href: "/admin/tracks", label: tk("Track Management"), icon: Presentation, area: "Tracks" },
     { href: "/admin/notifications", label: tk("Notifications"), icon: Bell, area: "Notifications" },
+    { href: "/admin/messages", label: tk("Messages"), icon: MessageCircle, area: "Notifications" },
+    { href: "/admin/moderation", label: tk("Chat moderation"), icon: MessageSquareWarning, area: "Notifications" },
     { href: "/admin/roles", label: tk("Roles & Permissions"), icon: Shield, area: "Roles & Permissions" },
     { href: "/admin/projects", label: tk("Projects"), icon: Folder, area: "Projects" },
     { href: "/admin/certificates", label: tk("Certificates"), icon: FileBadge, area: "Certificates" },
@@ -448,6 +453,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="ms-auto flex items-center gap-[0.8em]">
+            <ChatButton className={`${glass} size-[2.7em]`} />
             <Link
               href={"/admin/notifications" as Route}
               aria-label={t("Notifications")}
