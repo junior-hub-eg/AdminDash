@@ -21,7 +21,7 @@ export const STATUS_LABEL: Record<CertificateStatus, string> = {
   Revoked: tk("Revoked"),
 };
 
-export const KIND_LABEL = { TrackCompletion: tk("Track Completion"), Capstone: tk("Capstone") } as const;
+export const KIND_LABEL = { TrackCompletion: tk("Track Completion"), Capstone: tk("Capstone"), CourseLevel: tk("Course Level") } as const;
 
 export const formatCertificateDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString(dateLocale("en-US"), { dateStyle: "medium" }) : "—";

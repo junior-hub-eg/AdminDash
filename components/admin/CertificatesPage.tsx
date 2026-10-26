@@ -80,6 +80,8 @@ export default function CertificatesPage() {
   }, [queryKey, tab, filters.trackCode, filters.kind, search, page]);
 
   const [selected, setSelected] = useState<AdminCertificate | null>(null);
+  // The preview is never empty: until a row is picked it shows the first certificate of the list.
+  const shown = selected ?? list?.data?.items[0] ?? null;
   const [issuing, setIssuing] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
@@ -198,11 +200,11 @@ export default function CertificatesPage() {
             }}
           />
           {list?.error && list.key === queryKey && <LoadState error={list.error} onRetry={() => setVersion((v) => v + 1)} />}
-          <CertificatesTable data={list?.data ?? null} loading={loading} selectedId={selected?.id ?? null} onSelect={setSelected} onPage={setPage} />
+          <CertificatesTable data={list?.data ?? null} loading={loading} selectedId={shown?.id ?? null} onSelect={setSelected} onPage={setPage} />
         </div>
 
         <div className="min-w-0 space-y-[1.2em]">
-          <CertificatePreview key={selected?.id ?? "none"} certificate={selected} onChanged={onChanged} />
+          <CertificatePreview key={shown?.id ?? "none"} certificate={shown} onChanged={onChanged} />
           <VerificationGateway />
         </div>
       </div>

@@ -117,7 +117,9 @@ export default function VerificationGateway() {
                     ? t("Simulation")
                     : result.cert.kind === "Capstone"
                       ? t("Capstone")
-                      : t("Track Completion")}
+                      : result.cert.kind === "CourseLevel"
+                        ? t("Course Level")
+                        : t("Track Completion")}
                 </span>
               </p>
               <p className="mt-[0.2em] font-semibold text-[#0b1b2b]">

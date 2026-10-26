@@ -115,6 +115,7 @@ export default function CertificateFilters({
             <option value="">{t("All Types")}</option>
             <option value="TrackCompletion">{t("Track Completion")}</option>
             <option value="Capstone">{t("Capstone")}</option>
+            <option value="CourseLevel">{t("Course Level")}</option>
           </select>
           <Layers className="pointer-events-none absolute end-[0.8em] top-1/2 size-[1em] -translate-y-1/2 text-[#5b6b7c]" />
         </label>
