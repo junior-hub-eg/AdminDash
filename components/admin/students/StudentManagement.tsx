@@ -1,5 +1,6 @@
 "use client";
 
+import { activityText } from "@/lib/activity-text";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -350,7 +351,7 @@ export default function StudentManagement() {
                   </span>
                   <nav aria-label={t("Pagination")} className="flex items-center gap-[0.3em]">
                     <PageBtn label={t("Previous page")} disabled={current <= 1} onClick={() => setPage(current - 1)}>
-                      <ChevronLeft className="size-[1.1em] rtl:rotate-180" />
+                      <ChevronLeft className="size-[1.1em]" />
                     </PageBtn>
                     {numbers.map((n, i) =>
                       n === "…" ? (
@@ -372,7 +373,7 @@ export default function StudentManagement() {
                       ),
                     )}
                     <PageBtn label={t("Next page")} disabled={current >= pages} onClick={() => setPage(current + 1)}>
-                      <ChevronRight className="size-[1.1em] rtl:rotate-180" />
+                      <ChevronRight className="size-[1.1em]" />
                     </PageBtn>
                   </nav>
                   <label className="flex items-center gap-[0.5em]">
@@ -412,7 +413,7 @@ export default function StudentManagement() {
                 <Clock className="size-[1.1em] text-[#1d6fe0]" /> {t("Recent Activities")}
               </h2>
               <Link href={"/admin/security" as Route} className="inline-flex items-center gap-[0.3em] text-[0.78em] font-semibold text-[#1d6fe0] hover:underline">
-                {t("View All")} <ArrowRight className="size-[1em] rtl:rotate-180" />
+                {t("View All")} <ArrowRight className="size-[1em]" />
               </Link>
             </header>
             {!feed.data ? (
@@ -431,7 +432,7 @@ export default function StudentManagement() {
                       <StudentAvatar student={{ photoUrl: f.photoUrl, gender: null }} index={i} size="2.3em" />
                       <span className="min-w-0 flex-1 text-[0.78em]">
                         <span className="block text-[#14365a]">
-                          <b className="text-[#0b1b2b]">{f.studentName}</b> {f.text}
+                          <b className="text-[#0b1b2b]">{f.studentName}</b> {activityText(f.text, t)}
                         </span>
                         {f.trackName && <span className="block text-[0.9em] text-[#8a97a6]">{t(f.trackName)}</span>}
                       </span>

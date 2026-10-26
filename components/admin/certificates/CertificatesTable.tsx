@@ -1,5 +1,6 @@
 "use client";
 
+import { certificateTitle } from "@/lib/certificate-title";
 import { Award, ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
 
 import type { AdminCertificate, AdminCertificatePage, CertificateStatus } from "@/lib/admin-certificates-api";
@@ -95,7 +96,7 @@ export default function CertificatesTable({
                     </button>
                   </td>
                   <td className="px-[1.3em] py-[0.9em]">
-                    <p className="font-semibold text-[#0b1b2b]">{c.title}</p>
+                    <p className="font-semibold text-[#0b1b2b]">{certificateTitle(c.title, t)}</p>
                     <p className="text-[0.9em] text-[#5b6b7c]">{t(KIND_LABEL[c.kind])}</p>
                   </td>
                   <td className="px-[1.3em] py-[0.9em]">{c.trackName}</td>
@@ -148,7 +149,7 @@ export default function CertificatesTable({
             aria-label={t("Previous page")}
             className="grid size-[2.2em] place-items-center rounded-[0.4em] hover:bg-[#eef3fb] disabled:opacity-35"
           >
-            <ChevronLeft className="size-[1.1em] rtl:rotate-180" />
+            <ChevronLeft className="size-[1.1em]" />
           </button>
           {pages(page, last).map((p, i) =>
             p === "…" ? (
@@ -177,7 +178,7 @@ export default function CertificatesTable({
             aria-label={t("Next page")}
             className="grid size-[2.2em] place-items-center rounded-[0.4em] hover:bg-[#eef3fb] disabled:opacity-35"
           >
-            <ChevronRight className="size-[1.1em] rtl:rotate-180" />
+            <ChevronRight className="size-[1.1em]" />
           </button>
         </nav>
       </div>

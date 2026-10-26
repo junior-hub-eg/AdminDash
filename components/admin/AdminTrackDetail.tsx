@@ -66,7 +66,7 @@ export default function AdminTrackDetail({ id }: { id: string }) {
   return (
     <AdminSurface>
       <Link href={"/admin/tracks" as Route} className="inline-flex items-center gap-[0.4em] text-[0.85em] font-semibold text-[#14365a] hover:underline">
-        <ArrowLeft className="size-[1em] rtl:rotate-180" /> {t("All tracks")}
+        <ArrowLeft className="size-[1em]" /> {t("All tracks")}
       </Link>
 
       {!d ? (

@@ -36,7 +36,7 @@ export function ActiveSquadsOversight({
       icon={<UsersRound className="size-[1.1em]" />}
       action={
         <Link href={"/admin/squads" as Route} className="inline-flex items-center gap-[0.3em] text-[0.75em] font-semibold text-[#0b6f86] hover:underline">
-          {t("Squad Analytics")} <ArrowRight className="size-[1em] rtl:rotate-180" />
+          {t("Squad Analytics")} <ArrowRight className="size-[1em]" />
         </Link>
       }
     >

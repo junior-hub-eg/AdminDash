@@ -1,5 +1,6 @@
 "use client";
 
+import { certificateTitle } from "@/lib/certificate-title";
 import { useState, type FormEvent } from "react";
 import { Ban, GraduationCap, LoaderCircle, Medal, QrCode, ShieldCheck } from "lucide-react";
 
@@ -110,7 +111,7 @@ export default function CertificatePreview({
           {c ? (
             <>
               <p className="mt-[0.3em] text-[0.8em] font-semibold text-[#2fe0d0]">{c.trackName}</p>
-              <p className="mt-[0.2em] text-[0.62em] text-white/80">{c.title}</p>
+              <p className="mt-[0.2em] text-[0.62em] text-white/80">{certificateTitle(c.title, t)}</p>
             </>
           ) : (
             <p className="mx-auto mt-[0.3em] h-[0.9em] w-[9em] rounded-[0.3em] bg-white/10" aria-hidden />

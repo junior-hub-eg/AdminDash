@@ -95,7 +95,7 @@ export function MentorWorkload({
           {t("Mentor feedbacks")}: <b className="text-[#0b1b2b]">{mentorship ? fmt(mentorship.feedbacks) : DASH}</b>
         </span>
         <Link href="/admin/mentors" className="inline-flex items-center gap-[0.3em] font-bold text-[#0b89a6] hover:underline">
-          {t("All mentors")} <ArrowRight className="size-[1em] rtl:rotate-180" />
+          {t("All mentors")} <ArrowRight className="size-[1em]" />
         </Link>
       </CardFooter>
     </Section>

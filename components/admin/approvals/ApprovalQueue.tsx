@@ -313,7 +313,7 @@ export default function ApprovalQueue({
               aria-label={t("Previous page")}
               className="grid size-8 place-items-center rounded-lg hover:bg-[#eef4fa] disabled:opacity-35"
             >
-              <ChevronLeft className="size-4 rtl:rotate-180" />
+              <ChevronLeft className="size-4" />
             </button>
 
             {pageList(page, pageCount).map((p, i) =>
@@ -343,7 +343,7 @@ export default function ApprovalQueue({
               aria-label={t("Next page")}
               className="grid size-8 place-items-center rounded-lg hover:bg-[#eef4fa] disabled:opacity-35"
             >
-              <ChevronRight className="size-4 rtl:rotate-180" />
+              <ChevronRight className="size-4" />
             </button>
           </nav>
         </div>

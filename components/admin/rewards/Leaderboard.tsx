@@ -107,7 +107,7 @@ export function Leaderboard({ longestStreak }: { longestStreak: number | null })
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-[0.4em]">
                   <span className="truncate text-[1.05em] font-extrabold text-[#0b1b2b]">{first.name}</span>
-                  {first.pill && <Pill tone="cyan">{first.pill}</Pill>}
+                  {first.pill && <Pill tone="cyan">{t(first.pill)}</Pill>}
                   <Pill tone="amber">{t("#1 Champion")}</Pill>
                 </span>
                 <span className="mt-[0.2em] block text-[0.72em] text-[#5b6b7c]">{first.sub}</span>
@@ -116,7 +116,7 @@ export function Leaderboard({ longestStreak }: { longestStreak: number | null })
                 <span className="block text-[1.5em] font-extrabold text-[#0b1b2b]">{fmt(first.xp)}</span>
                 <span className="block text-[0.62em] font-bold uppercase tracking-[0.06em] text-[#5b6b7c]">{t("Total XP")}</span>
               </span>
-              <ChevronRight className="size-[1.2em] shrink-0 text-[#5b6b7c] rtl:rotate-180" />
+              <ChevronRight className="size-[1.2em] shrink-0 text-[#5b6b7c]" />
             </Link>
           </li>
           {rest.map((s, i) => (
@@ -129,7 +129,7 @@ export function Leaderboard({ longestStreak }: { longestStreak: number | null })
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-[0.4em]">
                     <span className="truncate text-[0.92em] font-bold text-[#0b1b2b]">{s.name}</span>
-                    {s.pill && <Pill tone="cyan">{s.pill}</Pill>}
+                    {s.pill && <Pill tone="cyan">{t(s.pill)}</Pill>}
                   </span>
                   <span className="block truncate text-[0.7em] text-[#8a97a6]">{s.sub}</span>
                 </span>
@@ -137,7 +137,7 @@ export function Leaderboard({ longestStreak }: { longestStreak: number | null })
                   <span className="block text-[1.1em] font-extrabold text-[#0b1b2b]">{fmt(s.xp)}</span>
                   <span className="block text-[0.6em] font-bold uppercase tracking-[0.06em] text-[#5b6b7c]">XP</span>
                 </span>
-                <ChevronRight className="size-[1.1em] shrink-0 text-[#8a97a6] rtl:rotate-180" />
+                <ChevronRight className="size-[1.1em] shrink-0 text-[#8a97a6]" />
               </Link>
             </li>
           ))}

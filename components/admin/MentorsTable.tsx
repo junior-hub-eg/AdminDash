@@ -373,7 +373,7 @@ export function MentorsTable({ mentors, onChanged }: { mentors: AdminMentor[]; o
               aria-label={t("Previous page")}
               className="grid size-[2.3em] place-items-center rounded-[0.5em] border border-[#e1e8f0] bg-white disabled:opacity-40"
             >
-              <ChevronLeft className="size-[1.1em] rtl:rotate-180" />
+              <ChevronLeft className="size-[1.1em]" />
             </button>
             {numbers.map((n) => (
               <button
@@ -395,7 +395,7 @@ export function MentorsTable({ mentors, onChanged }: { mentors: AdminMentor[]; o
               aria-label={t("Next page")}
               className="grid size-[2.3em] place-items-center rounded-[0.5em] border border-[#e1e8f0] bg-white disabled:opacity-40"
             >
-              <ChevronRight className="size-[1.1em] rtl:rotate-180" />
+              <ChevronRight className="size-[1.1em]" />
             </button>
           </nav>
         </footer>

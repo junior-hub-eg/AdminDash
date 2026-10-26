@@ -221,7 +221,7 @@ export function Pager({ page, pages, onChange }: { page: number; pages: number; 
         aria-label={t("Previous page")}
         className="grid size-[2.2em] place-items-center rounded-[0.6em] border border-[#dfe7f1] bg-white disabled:opacity-40"
       >
-        <ChevronLeft className="size-[1.1em] rtl:rotate-180" />
+        <ChevronLeft className="size-[1.1em]" />
       </button>
       <span>{t("Page {page} of {pages}", { page, pages })}</span>
       <button
@@ -231,7 +231,7 @@ export function Pager({ page, pages, onChange }: { page: number; pages: number; 
         aria-label={t("Next page")}
         className="grid size-[2.2em] place-items-center rounded-[0.6em] border border-[#dfe7f1] bg-white disabled:opacity-40"
       >
-        <ChevronRight className="size-[1.1em] rtl:rotate-180" />
+        <ChevronRight className="size-[1.1em]" />
       </button>
     </span>
   );

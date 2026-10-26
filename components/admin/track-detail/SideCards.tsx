@@ -87,7 +87,7 @@ export function TrackGovernance({ onEdit, onDelete, deleting, error }: { onEdit:
         <button type="button" onClick={onEdit} className={`${row} bg-[#f1f5fd] text-[#14365a] hover:bg-[#e6f1fb]`}>
           <Pencil className="size-[1.1em]" />
           <span className="flex-1">{t("Edit Track Details")}</span>
-          <ChevronRight className="size-[1em] rtl:rotate-180" />
+          <ChevronRight className="size-[1em]" />
         </button>
         <button type="button" onClick={onDelete} disabled={deleting} className={`${row} bg-[#fdecec] text-[#b83232] hover:bg-[#fbe0e0]`}>
           {deleting ? <LoaderCircle className="size-[1.1em] animate-spin" /> : <Trash2 className="size-[1.1em]" />}

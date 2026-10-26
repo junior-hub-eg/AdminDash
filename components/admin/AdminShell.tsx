@@ -386,7 +386,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               placeholder={t("Search anything....")}
               className="h-[2.7em] w-full rounded-full border border-white/80 bg-gradient-to-r from-[#d3f1fc]/90 to-[#c4ecfb]/90 ps-[2.8em] pe-[1em] text-[0.85em] text-[#14365a] shadow-[0_10px_26px_rgba(34,190,240,0.35)] outline-none backdrop-blur placeholder:text-[#14365a]/80 focus:ring-2 focus:ring-[#06b6d4]/50 sm:pe-[4.2em] rtl:bg-gradient-to-l"
             />
-            <kbd className="pointer-events-none absolute end-[0.6em] top-1/2 hidden -translate-y-1/2 rounded-full bg-[#38bdf8] px-[0.75em] py-[0.25em] font-sans text-[0.65em] font-semibold text-white shadow-[0_0_12px_rgba(56,189,248,0.8)] sm:block">
+            <kbd className="pointer-events-none absolute right-[0.6em] rtl:right-auto rtl:left-[0.6em] top-1/2 hidden -translate-y-1/2 rounded-full bg-[#38bdf8] px-[0.75em] py-[0.25em] font-sans text-[0.65em] font-semibold text-white shadow-[0_0_12px_rgba(56,189,248,0.8)] sm:block">
               ⌘K
             </kbd>
           </label>
@@ -509,7 +509,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                       }}
                       className="flex w-full items-center gap-[0.6em] px-[1.1em] py-[0.7em] text-start text-[0.85em] font-semibold text-[#c0392b] hover:bg-[#fdf0f0]"
                     >
-                      <LogOut className="size-[1.1em] rtl:rotate-180" /> {t("Log out")}
+                      <LogOut className="size-[1.1em]" /> {t("Log out")}
                     </button>
                   </div>
                 </>

@@ -72,7 +72,7 @@ export function ProjectList({ items, selectedId, onSelect }: { items: AdminSquad
                   }`}
                 >
                   {on ? t("Selected") : t("Review")}
-                  {on && <ChevronRight className="size-[1em] rtl:rotate-180" />}
+                  {on && <ChevronRight className="size-[1em]" />}
                 </button>
               </div>
             </div>
@@ -110,7 +110,7 @@ export function ProjectList({ items, selectedId, onSelect }: { items: AdminSquad
             onClick={() => setPage(current - 1)}
             className="grid size-[2.2em] place-items-center rounded-[0.4em] bg-[#eef3fa] disabled:opacity-40"
           >
-            <ChevronLeft className="size-[1.1em] rtl:rotate-180" />
+            <ChevronLeft className="size-[1.1em]" />
           </button>
           {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
             <button
@@ -130,7 +130,7 @@ export function ProjectList({ items, selectedId, onSelect }: { items: AdminSquad
             onClick={() => setPage(current + 1)}
             className="grid size-[2.2em] place-items-center rounded-[0.4em] bg-[#eef3fa] disabled:opacity-40"
           >
-            <ChevronRight className="size-[1.1em] rtl:rotate-180" />
+            <ChevronRight className="size-[1.1em]" />
           </button>
         </nav>
       </footer>

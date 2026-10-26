@@ -57,7 +57,7 @@ export function RoleTabs({
                       on ? "bg-[#0b6f86] text-white" : "bg-[#e1e9f6] text-[#0b6f86]"
                     }`}
                   >
-                    {r.meta}
+                    {roleMeta(r.meta, t)}
                   </span>
                   <span
                     className={`rounded-[0.35em] px-[0.6em] py-[0.15em] text-[0.66em] font-semibold ${
@@ -99,4 +99,10 @@ export function RoleTabs({
       </ul>
     </section>
   );
+}
+
+/** The API's "Full Access - 3 Users" line, translated part by part. */
+function roleMeta(meta: string, t: ReturnType<typeof useT>) {
+  const m = /^(.*?)\s*-\s*(\d+) Users?$/.exec(meta);
+  return m ? `${t(m[1])} - ${t("{count} Users", { count: m[2] })}` : t(meta);
 }

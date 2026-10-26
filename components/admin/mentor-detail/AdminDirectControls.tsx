@@ -78,7 +78,7 @@ export function AdminDirectControls({
           <button type="button" aria-expanded={picking} onClick={() => onPicking(!picking)} className={ROW}>
             <UserPlus className="size-[1.1em]" />
             <span className="flex-1">{t("Assign Additional Squad")}</span>
-            {picking ? <ChevronDown className="size-[1em]" /> : <ChevronRight className="size-[1em] rtl:rotate-180" />}
+            {picking ? <ChevronDown className="size-[1em]" /> : <ChevronRight className="size-[1em]" />}
           </button>
           {picking && (
             <div className="grid gap-[0.5em] px-[0.9em] pb-[0.9em] text-[0.8em]">
@@ -109,7 +109,7 @@ export function AdminDirectControls({
         <button type="button" disabled={!students} onClick={() => students && exportReport(mentor, students)} className={`${ROW} disabled:opacity-50`}>
           <Download className="size-[1.1em]" />
           <span className="flex-1">{t("Export Coaching Report (CSV)")}</span>
-          <ChevronRight className="size-[1em] rtl:rotate-180" />
+          <ChevronRight className="size-[1em]" />
         </button>
       </div>
     </Section>

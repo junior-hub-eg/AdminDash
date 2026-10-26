@@ -289,7 +289,7 @@ export function SquadCard({
               href={href as Route}
               className="inline-flex items-center gap-[0.4em] rounded-[0.7em] bg-[#e3f0fb] px-[1.1em] py-[0.6em] text-[0.8em] font-semibold text-[#0d3b66] hover:bg-[#d4e8f8]"
             >
-              {t("Open Workspace")} <ArrowRight className="size-[1em] rtl:rotate-180" />
+              {t("Open Workspace")} <ArrowRight className="size-[1em]" />
             </Link>
           )}
         </div>

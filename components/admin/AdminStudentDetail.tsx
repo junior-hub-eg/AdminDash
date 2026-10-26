@@ -1,5 +1,6 @@
 "use client";
 
+import { activityText } from "@/lib/activity-text";
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
@@ -37,7 +38,7 @@ export default function AdminStudentDetail({ id }: { id: string }) {
     <AdminPage>
       <PageHero title={s?.fullName ?? t("Student profile")} contentClassName="pb-[3em]" pictureTop>
         <Link href={"/admin/students" as Route} className="mt-[0.8em] inline-flex items-center gap-[0.4em] text-[0.85em] font-semibold text-[#14365a] hover:underline">
-          <ArrowLeft className="size-[1em] rtl:rotate-180" /> {t("All students")}
+          <ArrowLeft className="size-[1em]" /> {t("All students")}
         </Link>
       </PageHero>
 
@@ -96,7 +97,7 @@ export default function AdminStudentDetail({ id }: { id: string }) {
                 <ul className="mt-[0.8em] grid gap-[0.5em] text-[0.85em]">
                   {s.recentActivity.map((a, i) => (
                     <li key={i} className="flex flex-wrap justify-between gap-[0.6em] border-b border-[#eef3f9] pb-[0.4em] last:border-0">
-                      <span className="text-[#14365a]">{a.text}</span>
+                      <span className="text-[#14365a]">{activityText(a.text, t)}</span>
                       <span className="text-[#8a97a6]">
                         {new Date(a.createdUtc).toLocaleString(dateLocale("en-GB"), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                       </span>
@@ -232,7 +233,7 @@ function SquadSection({ student, onMoved }: { student: Detail; onMoved: () => Pr
             href={`/admin/squads/${squadId}` as Route}
             className="inline-flex items-center gap-[0.3em] text-[0.85em] font-semibold text-[#0b89a6] hover:underline"
           >
-            {t("Open Workspace")} <ArrowRight className="size-[1em] rtl:rotate-180" />
+            {t("Open Workspace")} <ArrowRight className="size-[1em]" />
           </Link>
         )}
       </div>

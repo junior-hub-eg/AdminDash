@@ -430,7 +430,7 @@ export default function AdminSquads() {
                           aria-label={t("Open Workspace")}
                           className="inline-grid size-[2.2em] place-items-center rounded-[0.6em] bg-[#e3f0fb] text-[#0d3b66] hover:bg-[#d4e8f8]"
                         >
-                          <ArrowRight className="size-[1.1em] rtl:rotate-180" />
+                          <ArrowRight className="size-[1.1em]" />
                         </Link>
                       </td>
                     </tr>
@@ -461,7 +461,7 @@ export default function AdminSquads() {
               aria-label={t("Previous page")}
               className="grid size-[2.3em] place-items-center rounded-[0.6em] text-[#14365a] hover:bg-[#eef4fa] disabled:opacity-35"
             >
-              <ChevronLeft className="size-[1.1em] rtl:rotate-180" />
+              <ChevronLeft className="size-[1.1em]" />
             </button>
 
             {numbers.map((n, i) =>
@@ -491,7 +491,7 @@ export default function AdminSquads() {
               aria-label={t("Next page")}
               className="grid size-[2.3em] place-items-center rounded-[0.6em] bg-white text-[#14365a] shadow-sm hover:bg-[#eef4fa] disabled:opacity-35"
             >
-              <ChevronRight className="size-[1.1em] rtl:rotate-180" />
+              <ChevronRight className="size-[1.1em]" />
             </button>
           </nav>
         </footer>

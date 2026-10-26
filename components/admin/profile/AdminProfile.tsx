@@ -79,7 +79,7 @@ export default function AdminProfile() {
 
           <div className="mt-auto border-t border-[#eef2f6] pt-[1.2em]">
             <button type="button" onClick={logout} className="inline-flex items-center justify-center gap-[0.5em] rounded-[0.7em] border border-[#f3d2d2] bg-white px-[1.1em] py-[0.65em] text-[0.85em] font-semibold text-[#c0392b] hover:bg-[#fdf0f0]">
-              <LogOut className="size-[1.1em] rtl:rotate-180" />
+              <LogOut className="size-[1.1em]" />
               {t("Log out")}
             </button>
           </div>

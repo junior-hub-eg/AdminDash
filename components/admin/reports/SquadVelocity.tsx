@@ -63,7 +63,7 @@ export function SquadVelocity({ squads, error, onRetry }: { squads: AdminSquad[]
           {t("Average squad progress")}: <b className="text-[#0b1b2b]">{mean != null ? `${mean}%` : "—"}</b>
         </span>
         <Link href="/admin/squads" className="inline-flex items-center gap-[0.3em] font-bold text-[#0b89a6] hover:underline">
-          {t("All {count} squads", { count: list.length })} <ArrowRight className="size-[1em] rtl:rotate-180" />
+          {t("All {count} squads", { count: list.length })} <ArrowRight className="size-[1em]" />
         </Link>
       </CardFooter>
     </Section>

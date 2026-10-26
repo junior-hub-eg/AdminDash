@@ -72,7 +72,7 @@ export function TrackCompletion({
           {t("Average pacing")}: <b className="text-[#0b1b2b]">{pacing != null ? `${pacing}%` : "—"}</b>
         </span>
         <Link href="/admin/tracks" className="inline-flex items-center gap-[0.3em] font-bold text-[#0b89a6] hover:underline">
-          {t("Track details")} <ArrowRight className="size-[1em] rtl:rotate-180" />
+          {t("Track details")} <ArrowRight className="size-[1em]" />
         </Link>
       </CardFooter>
     </Section>

@@ -1,5 +1,6 @@
 "use client";
 
+import { activityText } from "@/lib/activity-text";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
@@ -342,7 +343,7 @@ function FeedItem({ f, last }: { f: PlatformActivity; last: boolean }) {
           <Link href={`/admin/students/${f.studentId}` as Route} className="font-semibold hover:underline">
             {f.studentName}
           </Link>{" "}
-          <span className="text-[#14365a]">{f.text}</span>
+          <span className="text-[#14365a]">{activityText(f.text, t)}</span>
         </span>
         <span className="mt-[0.15em] block text-[0.88em] text-[#6b7686]">
           {timeAgo(f.createdUtc, t)}
@@ -568,7 +569,7 @@ function AreaCard({ href, icon, label, value, hint }: { href: string; icon: Reac
           <span className="block text-[1.35em] font-bold leading-tight text-[#0b1b2b]">{value}</span>
           <span className="block truncate text-[0.7em] text-[#8a97a6]">{hint}</span>
         </span>
-        <ArrowRight className="size-[1.1em] shrink-0 text-[#8a97a6] transition-transform group-hover:translate-x-0.5 rtl:rotate-180" />
+        <ArrowRight className="size-[1.1em] shrink-0 text-[#8a97a6] transition-transform group-hover:translate-x-0.5" />
       </Link>
     </li>
   );
@@ -804,7 +805,7 @@ export default function AdminDashboard() {
               aside={
                 <Link href={"/admin/squads" as Route} className="mt-[0.3em] inline-flex shrink-0 items-center gap-[0.2em] text-[0.75em] font-semibold text-[#0b6f86] hover:underline">
                   {t("View All {count} Squads", { count: squadList.length })}
-                  <ChevronRight className="size-[1.1em] rtl:rotate-180" />
+                  <ChevronRight className="size-[1.1em]" />
                 </Link>
               }
             />
