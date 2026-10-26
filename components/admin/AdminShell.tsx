@@ -10,8 +10,6 @@ import {
   Bell,
   ChartLine,
   ChevronDown,
-  ClipboardCheck,
-  ClipboardList,
   Clock,
   FileBadge,
   Folder,
@@ -82,8 +80,6 @@ const NAV_GROUPS: NavItem[][] = [
 
 /** Pages that exist but are not in the design: kept reachable under "More". */
 const MORE_NAV: NavItem[] = [
-  { href: "/admin/assignments", label: tk("Assignments & Submissions"), icon: ClipboardList },
-  { href: "/admin/assessment-builder", label: tk("Assessment Builder"), icon: ClipboardCheck },
   { href: "/admin/activity-log", label: tk("Activity Log"), icon: History },
   { href: "/admin/grammar", label: tk("Grammar Coach"), icon: Languages },
 ];

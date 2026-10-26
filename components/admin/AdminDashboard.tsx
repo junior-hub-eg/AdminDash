@@ -13,7 +13,6 @@ import {
   ChevronRight,
   CircleCheck,
   ClipboardCheck,
-  FileText,
   GraduationCap,
   Hourglass,
   LoaderCircle,
@@ -734,8 +733,6 @@ export default function AdminDashboard() {
           hint={t("Sign-ups, mentor changes, new tracks")} />
         <AreaCard href="/admin/notifications" icon={<Megaphone className="size-[1.2em]" />} label={t("Announcements")} value={r ? r.platform.announcements : dash}
           hint={r ? t("{count} unread notifications", { count: r.platform.unreadNotifications }) : ""} />
-        <AreaCard href="/admin/assignments" icon={<FileText className="size-[1.2em]" />} label={t("Assignments & Submissions")} value={r ? r.teaching.submissions : dash}
-          hint={r ? t("{count} waiting for a grade", { count: r.teaching.waitingForGrade }) : ""} />
         <AreaCard href="/admin/reports" icon={<BarChart3 className="size-[1.2em]" />} label={t("System Report")} value={r ? r.users.total : dash}
           hint={t("accounts · full report and export")} />
       </ul>

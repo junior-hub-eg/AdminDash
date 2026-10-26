@@ -220,25 +220,7 @@ export const savePlatformSettings = (settings: PlatformSettings) => api.put<Plat
 
 /* ---------- Assignments & submissions ---------- */
 
-export interface AdminSubmissionsOverview {
-  stats: { totalSubmissions: number; avgScore: string; pendingReview: number; approved: number };
-  rows: {
-    id: string;
-    student: string;
-    assignment: string;
-    track: string;
-    /** "Submitted", "Pending" or "Graded" */
-    status: string;
-    /** A picture in /images/Intern. */
-    avatar: string;
-    bg: string;
-    /** "Assignment" or "Squad" */
-    type: string;
-    submittedUtc: string;
-  }[];
-}
 
-export const getAdminSubmissions = () => api.get<AdminSubmissionsOverview>("/api/v1/admin/submissions");
 
 /* ---------- Roles & permissions ---------- */
 
