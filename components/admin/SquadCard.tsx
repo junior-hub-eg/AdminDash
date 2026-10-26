@@ -23,6 +23,7 @@ import { errorMessage } from "@/lib/api-client";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
 import { Avatar } from "./squad-detail/parts";
+import { SprintLink } from "./squad-detail/SprintDetails";
 
 const STATUS_STYLE: Record<AdminSquadStatus, string> = {
   Active: "bg-[#5ef0d0] text-[#06463c]",
@@ -125,7 +126,13 @@ export function SquadCard({
         <span
           className={`absolute end-[1em] top-[0.9em] max-w-[45%] truncate rounded-full px-[0.9em] py-[0.25em] text-[0.68em] font-bold ${STATUS_STYLE[squad.status]}`}
         >
-          {sprintPill}
+          {sprint ? (
+            <SprintLink squadId={squad.id} sprintId={sprint.id}>
+              {sprintPill}
+            </SprintLink>
+          ) : (
+            sprintPill
+          )}
         </span>
 
         <div className="relative flex items-end justify-between gap-[0.6em]">

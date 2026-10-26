@@ -32,6 +32,7 @@ import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
 import { AdminSurface, BTN_PRIMARY } from "./page-parts";
 import { currentSprint, SquadCard, STATUS_LABEL } from "./SquadCard";
+import { SprintLink } from "./squad-detail/SprintDetails";
 import { LoadState, useAdminData } from "./admin-data";
 import { CreateSquadDialog } from "./squad-detail/CreateSquadDialog";
 import { SquadStat } from "./squad-detail/SquadStat";
@@ -411,7 +412,15 @@ export default function AdminSquads() {
                       <td className="px-[1em] py-[0.7em]">{s.monitor?.fullName ?? <span className="text-[#c0392b]">{t("None yet")}</span>}</td>
                       <td className="px-[1em] py-[0.7em]">{full ? full.members.length : s.students}</td>
                       <td className="px-[1em] py-[0.7em]">
-                        <p className="text-[0.9em] font-semibold">{sprint?.name ?? "—"}</p>
+                        <p className="text-[0.9em] font-semibold">
+                          {sprint ? (
+                            <SprintLink squadId={s.id} sprintId={sprint.id}>
+                              {sprint.name}
+                            </SprintLink>
+                          ) : (
+                            "—"
+                          )}
+                        </p>
                         <div className="mt-[0.3em] flex items-center gap-[0.5em]">
                           <div className="h-[0.4em] w-[6em] overflow-hidden rounded-full bg-[#e6edf3]">
                             <div className="h-full rounded-full bg-[#06b6d4]" style={{ width: `${pct}%` }} />

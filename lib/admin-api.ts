@@ -368,6 +368,30 @@ export interface AvailableSquadStudent {
   trackName: string | null;
 }
 
+/** A task on a sprint board, as the squad's monitor sees it. */
+export interface SprintBoardTask {
+  id: string;
+  sprintId: string;
+  title: string;
+  status: SquadTaskStatus;
+  storyPoints: number;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  assigneePhotoUrl: string | null;
+  role: string | null;
+}
+
+/** The squad as its monitor sees it (GET admin/squads/{id}/monitor-detail); only what the sprint details use. */
+export interface AdminSquadMonitorView {
+  squad: { id: string; name: string; projectTitle: string; isCurrent: boolean };
+  members: { studentId: string; fullName: string; photoUrl: string | null; role: string }[];
+  sprints: AdminSprint[];
+  board: SprintBoardTask[];
+  pendingDateChange: { id: string; currentEndDate: string; proposedEndDate: string; reason: string; status: string; createdUtc: string } | null;
+  delays: { id: string; sprintId: string | null; sprintName: string | null; reason: string; note: string | null; createdUtc: string }[];
+}
+
+export const getAdminSquadMonitorView = (id: string) => api.get<AdminSquadMonitorView>(`/api/v1/admin/squads/${id}/monitor-detail`);
 export const getAdminSquadFull = (id: string) => api.get<AdminSquadFull>(`/api/v1/admin/squads/${id}/full`);
 export const updateSquadProject = (id: string, body: { name?: string; projectTitle?: string; projectDescription?: string }) =>
   api.put<AdminSquadFull>(`/api/v1/admin/squads/${id}/project`, body);

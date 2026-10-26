@@ -34,6 +34,7 @@ import { MembersPanel } from "./squad-detail/MembersPanel";
 import { SquadStat } from "./squad-detail/SquadStat";
 import { ActivityFeed, Leaderboard, LiveActivity, MentorNotes, taskActivity } from "./squad-detail/SquadSide";
 import { ProjectBrief } from "./squad-detail/ProjectBrief";
+import { SprintLink } from "./squad-detail/SprintDetails";
 import { AddMemberDialog, AddTaskDialog, SquadSettingsDialog } from "./squad-detail/SquadDialogs";
 
 type Tab = "overview" | "members" | "brief" | "sprints" | "board" | "leaderboard" | "activity";
@@ -197,7 +198,14 @@ function SquadWorkspace({
                 <span className="inline-flex items-center gap-[0.35em] rounded-full bg-[#dff7ea] px-[0.7em] py-[0.15em] text-[0.68em] font-semibold text-[#17935f]">
                   <span className="size-[0.5em] rounded-full bg-[#17935f]" />
                   {t(STATUS_LABEL[s.status])}
-                  {sprint && ` · ${sprint.name}`}
+                  {sprint && (
+                    <>
+                      {" · "}
+                      <SprintLink squadId={s.id} sprintId={sprint.id}>
+                        {sprint.name}
+                      </SprintLink>
+                    </>
+                  )}
                 </span>
               </div>
               <p className="mt-[0.35em] flex items-center gap-[0.4em] text-[0.88em] text-[#3d4f61]">
@@ -332,7 +340,9 @@ function SquadWorkspace({
               {s.sprints.map((p) => (
                 <li key={p.id} className={`rounded-[0.8em] border p-[0.9em] ${p.id === sprint?.id ? "border-[#06b6d4] bg-[#f3fbfe]" : "border-[#e3ebf3]"}`}>
                   <div className="flex flex-wrap items-center justify-between gap-[0.5em] text-[0.85em]">
-                    <span className="font-bold text-[#0b1b2b]">{p.name}</span>
+                    <SprintLink squadId={s.id} sprintId={p.id} className="font-bold text-[#0b1b2b]">
+                      {p.name}
+                    </SprintLink>
                     <span className="text-[#5b6b7c]">
                       {shortDate(p.startDate)} – {shortDate(p.endDate)} · {t(p.status)}
                     </span>
