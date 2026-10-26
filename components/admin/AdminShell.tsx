@@ -15,7 +15,6 @@ import {
   Folder,
   Gift,
   GraduationCap,
-  History,
   KeyRound,
   Languages,
   LayoutGrid,
@@ -80,7 +79,6 @@ const NAV_GROUPS: NavItem[][] = [
 
 /** Pages that exist but are not in the design: kept reachable under "More". */
 const MORE_NAV: NavItem[] = [
-  { href: "/admin/activity-log", label: tk("Activity Log"), icon: History },
   { href: "/admin/grammar", label: tk("Grammar Coach"), icon: Languages },
 ];
 

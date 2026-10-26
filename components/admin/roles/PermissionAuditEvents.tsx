@@ -63,7 +63,7 @@ export function PermissionAuditEvents() {
 
       <p className="mt-[1.2em] flex flex-wrap justify-between gap-[0.5em] text-[0.75em] text-[#5b6b7c]">
         <span>{t("{count} role changes recorded", { count: events.data?.total ?? 0 })}</span>
-        <Link href="/admin/activity-log" className="font-semibold text-[#0b6f86] hover:underline">
+        <Link href="/admin/security" className="font-semibold text-[#0b6f86] hover:underline">
           {t("Open Audit Log Console")} <span className="inline-block rtl:rotate-180">→</span>
         </Link>
       </p>

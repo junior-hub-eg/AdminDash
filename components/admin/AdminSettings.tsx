@@ -148,7 +148,7 @@ function SettingsForm({ initial }: { initial: PlatformSettings }) {
         description={t("Configure global system preferences, branding, squad parameters, localization, notifications and integrations.")}
         actions={
           <>
-            <Link href="/admin/activity-log" className={BTN_SECONDARY}>
+            <Link href="/admin/security" className={BTN_SECONDARY}>
               <History className="size-[1.1em]" /> {t("Audit Log")}
             </Link>
             {saveButton(t("Save All Changes"))}

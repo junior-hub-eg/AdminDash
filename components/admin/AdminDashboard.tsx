@@ -910,7 +910,7 @@ export default function AdminDashboard() {
               </ul>
             )}
             <Link
-              href={"/admin/activity-log" as Route}
+              href={"/admin/security" as Route}
               className="mt-[0.4em] block rounded-[0.5em] bg-[#eef3fb] py-[0.7em] text-center text-[0.78em] font-medium text-[#5b6b7c] hover:bg-[#e2eaf7]"
             >
               {t("View Complete System Log")}

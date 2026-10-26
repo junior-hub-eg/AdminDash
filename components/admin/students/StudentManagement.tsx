@@ -411,7 +411,7 @@ export default function StudentManagement() {
               <h2 className="flex items-center gap-[0.5em] text-[1em] font-bold text-[#0b1b2b]">
                 <Clock className="size-[1.1em] text-[#1d6fe0]" /> {t("Recent Activities")}
               </h2>
-              <Link href={"/admin/activity-log" as Route} className="inline-flex items-center gap-[0.3em] text-[0.78em] font-semibold text-[#1d6fe0] hover:underline">
+              <Link href={"/admin/security" as Route} className="inline-flex items-center gap-[0.3em] text-[0.78em] font-semibold text-[#1d6fe0] hover:underline">
                 {t("View All")} <ArrowRight className="size-[1em] rtl:rotate-180" />
               </Link>
             </header>
