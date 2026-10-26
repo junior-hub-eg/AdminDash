@@ -17,7 +17,7 @@ export type InspectorInfo = {
 };
 
 /** Which API a request comes from: a sign-up, a student's mentor change, a mentor's new track. */
-export type RequestSource = "signup" | "mentorChange" | "trackRequest";
+export type RequestSource = "signup" | "mentorChange" | "trackRequest" | "trackChange";
 
 /** One row of the queue, from one of the three request APIs. */
 export type QueueItem = {

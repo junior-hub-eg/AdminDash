@@ -235,6 +235,8 @@ export const adminManage: Record<string, string> = {
   "{count} requests approved.": "تمت الموافقة على {count} طلب.",
   "Decline the request from {name}?": "رفض طلب {name}؟",
   "Reason (optional)": "السبب (اختياري)",
+  "Track Change": "تغيير المسار",
+  "Wants to change their track to {track}": "يريد تغيير مساره إلى {track}",
   "Mentor Change": "تغيير المرشد",
   "New Track Request": "طلب مسار جديد",
   "Student • {track}": "طالب • {track}",

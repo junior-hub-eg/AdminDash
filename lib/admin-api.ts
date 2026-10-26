@@ -420,6 +420,23 @@ export interface AdminTrackRequest {
   createdUtc: string;
 }
 
+/** A student who learns a track asked to change to another one; the admin decides (26 Oct 2026). */
+export interface AdminTrackChangeRequest {
+  id: string;
+  student: AdminPerson;
+  /** The track in focus when they asked. */
+  currentTrack: { code: string; name: string } | null;
+  requestedTrack: { code: string; name: string };
+  /** From the placement test, when the request came from it. */
+  level: string | null;
+  createdUtc: string;
+}
+
+export const getTrackChangeRequests = () => api.get<AdminTrackChangeRequest[]>("/api/v1/admin/track-change-requests");
+export const approveTrackChangeRequest = (id: string) => api.post<void>(`/api/v1/admin/track-change-requests/${id}/approve`);
+export const rejectTrackChangeRequest = (id: string, reason?: string) =>
+  api.post<void>(`/api/v1/admin/track-change-requests/${id}/reject`, { reason: reason || null });
+
 export const getMentorRequests = () => api.get<AdminMentorRequest[]>("/api/v1/admin/mentor-requests");
 export const approveMentorRequest = (id: string) => api.post<void>(`/api/v1/admin/mentor-requests/${id}/approve`);
 export const rejectMentorRequest = (id: string, reason?: string) =>
