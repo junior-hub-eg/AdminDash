@@ -95,7 +95,8 @@ export default function AdminNewMentor() {
 
   return (
     <AdminPage>
-      <div className="pt-[calc(var(--u)*5.4)]">
+      {/* The same side space as the top bar, so the page does not touch the sidebar */}
+      <div className="pt-[calc(var(--u)*5.4)] lg:px-[calc(var(--u)*1.6)]">
         <nav aria-label={t("Breadcrumb")} className="text-[0.7em] font-medium text-[#5b6b7c]">
           <Link href={"/admin/dashboard" as Route} className="hover:underline">
             {t("Admin")}

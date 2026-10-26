@@ -112,7 +112,8 @@ export default function AdminMentors() {
 
   return (
     <AdminPage>
-      <div className="pt-[calc(var(--u)*5.4)]">
+      {/* The same side space as the top bar, so the page does not touch the sidebar */}
+      <div className="pt-[calc(var(--u)*5.4)] lg:px-[calc(var(--u)*1.6)]">
         {/* ---------- Header ---------- */}
         <section className="flex flex-wrap items-end justify-between gap-[1em]">
           <div>
