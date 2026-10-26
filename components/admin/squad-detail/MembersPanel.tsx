@@ -31,7 +31,9 @@ export function MembersPanel({
   const [target, setTarget] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const others = squads?.filter((s) => s.id !== squad.id && s.status !== "Completed") ?? [];
+  // Members join, leave or move only while the squad's project is open; the backend refuses it once it is in review or completed.
+  const open = squad.status === "Waiting" || squad.status === "Active";
+  const others = squads?.filter((s) => s.id !== squad.id && (s.status === "Waiting" || s.status === "Active")) ?? [];
 
   async function act(member: AdminSquadMember, work: () => Promise<unknown>, fail: string) {
     setBusy(member.studentId);
@@ -56,10 +58,20 @@ export function MembersPanel({
             {squad.seats.map((s) => `${t(s.role)} ${s.filled}/${s.needed}`).join(" · ")}
           </p>
         </div>
-        <button type="button" onClick={onAdd} className={BTN_PRIMARY}>
-          <UserPlus className="size-[1em]" /> {t("Add Member")}
-        </button>
+        {open && (
+          <button type="button" onClick={onAdd} className={BTN_PRIMARY}>
+            <UserPlus className="size-[1em]" /> {t("Add Member")}
+          </button>
+        )}
       </div>
+
+      {!open && (
+        <p className="mb-[0.8em] rounded-lg bg-[#f4f7fa] px-3 py-2 text-[0.8em] text-[#5b6b7c]">
+          {squad.status === "Completed"
+            ? t("This squad finished its project, so members can no longer be added, moved or removed.")
+            : t("This squad's project is in review, so members can no longer be added, moved or removed.")}
+        </p>
+      )}
 
       {error && <p role="alert" className="mb-[0.8em] rounded-lg bg-[#fdecec] px-3 py-2 text-[0.8em] font-semibold text-[#b83232]">{error}</p>}
 
@@ -108,7 +120,7 @@ export function MembersPanel({
                   <td className="px-[0.8em] font-semibold text-[#17935f]">{m.totalXp}</td>
                   <td className="px-[0.8em] text-[#5b6b7c]">{shortDate(m.lastActiveDate)}</td>
                   <td className="px-[0.8em] text-end">
-                    {moving === m.studentId ? (
+                    {!open ? null : moving === m.studentId ? (
                       <span className="inline-flex items-center gap-[0.4em]">
                         <select value={target} onChange={(e) => setTarget(e.target.value)} aria-label={t("Move to squad")} className={INPUT}>
                           <option value="">{t("Choose a squad")}</option>
