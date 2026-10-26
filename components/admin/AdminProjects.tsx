@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import type { Route } from "next";
 import { useState } from "react";
-import { BadgeCheck, Files, Hourglass, Plus, SlidersHorizontal, SquareTerminal } from "lucide-react";
-import { getAdminSquads, getSubmissionsByTrack, type AdminSquad } from "@/lib/admin-api";
+import { BadgeCheck, Files, Hourglass, Library, Plus, SlidersHorizontal, SquareTerminal } from "lucide-react";
+import { getAdminSquads, getProjects, getSubmissionsByTrack, type AdminProject, type AdminSquad } from "@/lib/admin-api";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
 import { BTN_PRIMARY, AdminSurface, StatCard, StatGrid } from "./page-parts";
@@ -13,6 +11,10 @@ import { ProjectFilters, type ProjectFilterState, type ProjectTab } from "./proj
 import { ProjectList } from "./projects/ProjectList";
 import { ProjectEvaluationPanel } from "./projects/ProjectEvaluationPanel";
 import { ReviewMetrics } from "./projects/ReviewMetrics";
+import { ProjectLibrary } from "./projects/ProjectLibrary";
+import { ProjectFormDialog } from "./projects/ProjectFormDialog";
+
+type View = "capstones" | "library";
 
 const TAB_STATUS: Record<ProjectTab, (s: AdminSquad) => boolean> = {
   all: () => true,
@@ -27,6 +29,8 @@ const two = (n: number) => String(n).padStart(2, "0");
  * Projects are the squads' capstones (GET admin/squads): title, squad, level, status, monitor, progress.
  * Selecting one loads the full squad for the evaluation panel. Mentors review the submissions;
  * the admin follows them here and per track (GET admin/submissions/by-track).
+ * The project library (27 Oct 2026) is the catalog apart from the squads (GET admin/projects): "New Project Brief" writes
+ * a project in full, and new squads get one of their level at random.
  */
 export default function AdminProjects() {
   const t = useT();
@@ -36,6 +40,17 @@ export default function AdminProjects() {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<ProjectFilterState>({ squad: "all", status: "all", level: "all" });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const catalog = useAdminData(getProjects, tk("We couldn't load the project library. Please try again."));
+  const [view, setView] = useState<View>("capstones");
+  // "new" for New Project Brief, a project to edit it, null when the form is closed.
+  const [editing, setEditing] = useState<AdminProject | "new" | null>(null);
+
+  function saved(project: AdminProject) {
+    catalog.setData([...(catalog.data ?? []).filter((p) => p.id !== project.id), project]);
+    setView("library");
+    // Squads still building it got its new title.
+    if (project.activeSquads > 0) squads.reload();
+  }
 
   const all = squads.data ?? [];
   const tracks = byTrack.data ?? [];
@@ -89,9 +104,9 @@ export default function AdminProjects() {
             >
               <SlidersHorizontal className="size-[1em]" /> {t("Evaluation Rubrics")}
             </button>
-            <Link href={"/admin/squads" as Route} className={BTN_PRIMARY}>
+            <button type="button" onClick={() => setEditing("new")} className={BTN_PRIMARY}>
               <Plus className="size-[1em]" /> {t("New Project Brief")}
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -131,28 +146,75 @@ export default function AdminProjects() {
         />
       </StatGrid>
 
-      <ProjectFilters
-        tab={tab}
-        onTab={setTab}
-        counts={counts}
-        query={query}
-        onQuery={setQuery}
-        filters={filters}
-        onFilters={setFilters}
-        squads={all}
-        trackCount={byTrack.data ? tracks.length : null}
-      />
+      <div role="tablist" className="flex flex-wrap gap-[0.4em] text-[0.82em]">
+        {(
+          [
+            { key: "capstones", label: t("Squad Capstones"), icon: Files, count: all.length },
+            { key: "library", label: t("Project Library"), icon: Library, count: catalog.data?.length },
+          ] as const
+        ).map((x) => (
+          <button
+            key={x.key}
+            type="button"
+            role="tab"
+            aria-selected={view === x.key}
+            onClick={() => setView(x.key)}
+            className={`inline-flex items-center gap-[0.5em] rounded-[0.7em] px-[1.1em] py-[0.6em] font-semibold shadow-[0_4px_14px_rgba(20,54,90,0.06)] ${
+              view === x.key ? "bg-[#0b6f86] text-white" : "bg-white text-[#14365a] hover:bg-[#eef3fa]"
+            }`}
+          >
+            <x.icon className="size-[1.05em]" /> {x.label}
+            {x.count !== undefined && <span className="opacity-70">{x.count}</span>}
+          </button>
+        ))}
+      </div>
 
-      {!squads.data ? (
-        <LoadState error={squads.error} onRetry={squads.reload} />
+      {view === "library" ? (
+        catalog.data ? (
+          <ProjectLibrary
+            projects={catalog.data}
+            onEdit={setEditing}
+            onDeleted={(id) => catalog.setData((catalog.data ?? []).filter((p) => p.id !== id))}
+          />
+        ) : (
+          <LoadState error={catalog.error} onRetry={catalog.reload} />
+        )
       ) : (
-        <div className="grid items-start gap-[1.2em] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          <ProjectList key={`${tab}|${q}|${filters.squad}|${filters.status}|${filters.level}`} items={items} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
-          <ProjectEvaluationPanel key={selected?.id ?? "none"} squad={selected} />
-        </div>
+        <>
+          <ProjectFilters
+            tab={tab}
+            onTab={setTab}
+            counts={counts}
+            query={query}
+            onQuery={setQuery}
+            filters={filters}
+            onFilters={setFilters}
+            squads={all}
+            trackCount={byTrack.data ? tracks.length : null}
+          />
+
+          {!squads.data ? (
+            <LoadState error={squads.error} onRetry={squads.reload} />
+          ) : (
+            <div className="grid items-start gap-[1.2em] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+              <ProjectList key={`${tab}|${q}|${filters.squad}|${filters.status}|${filters.level}`} items={items} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+              <ProjectEvaluationPanel key={selected?.id ?? "none"} squad={selected} />
+            </div>
+          )}
+
+          <ReviewMetrics tracks={byTrack.data} error={byTrack.error} />
+        </>
       )}
 
-      <ReviewMetrics tracks={byTrack.data} error={byTrack.error} />
+      {editing && (
+        <ProjectFormDialog
+          key={editing === "new" ? "new" : editing.id}
+          open
+          project={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)}
+          onSaved={saved}
+        />
+      )}
     </AdminSurface>
   );
 }

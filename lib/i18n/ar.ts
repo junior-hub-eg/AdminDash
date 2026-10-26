@@ -40,6 +40,7 @@ import { adminCertificates } from "./ar/admin-certificates";
 import { teacherGrammar } from "./ar/teacher-grammar";
 import { mentorArea } from "./ar/mentor-area";
 import { adminReports } from "./ar/admin-reports";
+import { adminProjects } from "./ar/admin-projects";
 
 /** Arabic translations, keyed by the English text. `node scripts/i18n-check.mjs` lists missing ones. */
 export const ar: Record<string, string> = {
@@ -72,6 +73,7 @@ export const ar: Record<string, string> = {
   ...adminUiC,
   ...adminUiD,
   ...adminUiE,
+  ...adminProjects,
   ...adminPermissions,
   ...teacher,
   ...students,

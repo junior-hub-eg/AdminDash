@@ -82,6 +82,9 @@ export interface AdminSquad {
   progress: number;
   students: number;
   capacity: number;
+  /** The catalog project; null for squads formed before the catalog. */
+  projectId?: string | null;
+  projectLogoUrl?: string | null;
 }
 
 export interface AdminMentor {
@@ -391,7 +394,68 @@ export const createSquad = (body: {
   level: TrackLevel;
   seats?: string;
   monitorId?: string | null;
+  /** A catalog project: its title, description, level and team replace the fields given. */
+  projectId?: string | null;
 }) => api.post<AdminSquad>("/api/v1/admin/squads", body);
+
+// ---------- Project catalog (27 Oct 2026) ----------
+
+export type ProjectLinkKind = "Chat" | "Meeting" | "Figma" | "GitHub" | "Drive" | "Docs" | "Other";
+export const PROJECT_LINK_KINDS: ProjectLinkKind[] = ["Chat", "Meeting", "Figma", "GitHub", "Drive", "Docs", "Other"];
+
+export interface ProjectLink {
+  kind: ProjectLinkKind;
+  /** Empty shows the kind. */
+  label: string;
+  url: string;
+}
+
+/** A project of the catalog, apart from the squads; new squads of its level get one at random. */
+export interface AdminProject {
+  id: string;
+  title: string;
+  description: string;
+  /** A link or a data:image URL; null for none. */
+  logoUrl: string | null;
+  level: TrackLevel;
+  /** The team by role, for example "Frontend:2,Backend:1". */
+  seats: string;
+  teamSize: number;
+  durationWeeks: number;
+  /** Every squad that got it; activeSquads are still building it (its level and team are locked then). */
+  squads: number;
+  activeSquads: number;
+  createdUtc: string;
+  links: ProjectLink[];
+}
+
+export interface ProjectInput {
+  title: string;
+  description: string;
+  logoUrl: string | null;
+  level: TrackLevel;
+  seats: string;
+  durationWeeks: number;
+  links: ProjectLink[];
+}
+
+export const getProjects = () => api.get<AdminProject[]>("/api/v1/admin/projects");
+export const createProject = (body: ProjectInput) => api.post<AdminProject>("/api/v1/admin/projects", body);
+export const updateProject = (id: string, body: ProjectInput) => api.put<AdminProject>(`/api/v1/admin/projects/${id}`, body);
+export const deleteProject = (id: string) => api.delete<unknown>(`/api/v1/admin/projects/${id}`);
+
+/** "Frontend:2,Backend:1" as role counts. */
+export function parseSeats(seats: string): Partial<Record<SquadRole, number>> {
+  const result: Partial<Record<SquadRole, number>> = {};
+  for (const part of seats.split(",")) {
+    const [role, count] = part.split(":").map((x) => x.trim());
+    if (SQUAD_ROLES.includes(role as SquadRole) && Number(count) > 0) result[role as SquadRole] = Number(count);
+  }
+  return result;
+}
+
+export const formatSeats = (seats: Partial<Record<SquadRole, number>>) =>
+  SQUAD_ROLES.filter((r) => (seats[r] ?? 0) > 0).map((r) => `${r}:${seats[r]}`).join(",");
 
 /** Students who learn a track but have no mentor in it, oldest first. */
 export interface UnassignedStudent {
