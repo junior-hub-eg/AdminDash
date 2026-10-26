@@ -8,11 +8,14 @@ import {
   parseSeats,
   PROJECT_LINK_KINDS,
   SQUAD_ROLES,
+  SUBMIT_LINK_KINDS,
   updateProject,
   type AdminProject,
+  type ProjectBrief,
   type ProjectLink,
   type ProjectLinkKind,
   type SquadRole,
+  type SubmitLinkKind,
   type TrackLevel,
 } from "@/lib/admin-api";
 import { errorMessage } from "@/lib/api-client";
@@ -45,6 +48,49 @@ const PLACEHOLDER: Record<ProjectLinkKind, string> = {
   Docs: "https://docs.google.com/…",
   Other: "https://…",
 };
+
+export const SUBMIT_LABEL: Record<SubmitLinkKind, string> = {
+  Figma: tk("Figma"),
+  GitHub: tk("GitHub"),
+  LiveSite: tk("Live site"),
+  Api: tk("API"),
+  Demo: tk("Demo"),
+  TestReport: tk("Test report"),
+  Other: tk("Other link"),
+};
+
+/** What each role submits unless the admin says otherwise, as on the backend (SquadWorkLink.For). */
+const DEFAULT_SUBMIT: Record<SquadRole, SubmitLinkKind[]> = {
+  UIUX: ["Figma"],
+  Frontend: ["GitHub", "LiveSite"],
+  Backend: ["GitHub", "Api"],
+  Testing: ["TestReport"],
+  AI: ["GitHub", "Demo"],
+  Data: ["GitHub", "Demo"],
+  Mobile: ["GitHub", "Demo"],
+  Gaming: ["GitHub", "Demo"],
+};
+
+const EMPTY_BRIEF: ProjectBrief = {
+  problem: "",
+  goals: "",
+  targetUsers: "",
+  useCases: "",
+  requirements: "",
+  deliverables: "",
+  acceptanceCriteria: "",
+};
+
+/** The PRD sections of the form, with what to write in each. */
+const BRIEF_FIELDS: { key: keyof ProjectBrief; label: string; hint: string; rows: number; max: number }[] = [
+  { key: "problem", label: tk("Overview & problem"), hint: tk("What the project is and the problem it solves."), rows: 3, max: 2000 },
+  { key: "goals", label: tk("Goals"), hint: tk("One goal per line."), rows: 3, max: 2000 },
+  { key: "targetUsers", label: tk("Target users"), hint: tk("One user per line, for example Students."), rows: 2, max: 2000 },
+  { key: "useCases", label: tk("Use cases"), hint: tk("One per line: who does what."), rows: 3, max: 4000 },
+  { key: "requirements", label: tk("Requirements (user stories)"), hint: tk("One per line: As a … I can …"), rows: 4, max: 4000 },
+  { key: "deliverables", label: tk("Deliverables"), hint: tk("What the squad hands in, one per line."), rows: 3, max: 2000 },
+  { key: "acceptanceCriteria", label: tk("Acceptance criteria"), hint: tk("How the monitor knows it is done, one per line."), rows: 3, max: 2000 },
+];
 
 /** The picture shrunk to a 256px square WebP, so the logo stays small enough to save with the project. */
 function shrinkImage(file: File): Promise<string> {
@@ -97,6 +143,12 @@ export function ProjectFormDialog({
     project ? parseSeats(project.seats) : { UIUX: 1, Frontend: 2, Backend: 2 },
   );
   const [links, setLinks] = useState<ProjectLink[]>(project?.links ?? [{ kind: "Chat", label: "", url: "" }]);
+  const [brief, setBrief] = useState<ProjectBrief>({ ...EMPTY_BRIEF, ...project?.brief });
+  const [submits, setSubmits] = useState<Record<SquadRole, SubmitLinkKind[]>>(() => {
+    const result = { ...DEFAULT_SUBMIT };
+    for (const r of project?.requiredLinks ?? []) result[r.role] = r.kinds;
+    return result;
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,6 +165,12 @@ export function ProjectFormDialog({
       setError(t("We couldn't read this image. Try a PNG or JPEG."));
     }
   }
+
+  const toggleSubmit = (role: SquadRole, kind: SubmitLinkKind) =>
+    setSubmits((all) => ({
+      ...all,
+      [role]: all[role].includes(kind) ? all[role].filter((k) => k !== kind) : [...all[role], kind],
+    }));
 
   const setLink = (i: number, patch: Partial<ProjectLink>) => setLinks((all) => all.map((l, j) => (j === i ? { ...l, ...patch } : l)));
 
@@ -133,6 +191,9 @@ export function ProjectFormDialog({
       durationWeeks: weeks,
       // Empty rows are left out.
       links: links.filter((l) => l.url.trim()).map((l) => ({ ...l, label: l.label.trim(), url: l.url.trim() })),
+      brief,
+      // Only the roles of the team; a role with nothing ticked submits its usual links.
+      requiredLinks: SQUAD_ROLES.filter((r) => (seats[r] ?? 0) > 0).map((role) => ({ role, kinds: submits[role] })),
     };
     try {
       onSaved(project ? await updateProject(project.id, body) : await createProject(body));
@@ -294,6 +355,49 @@ export function ProjectFormDialog({
               <Plus className="size-4" /> {t("Add link")}
             </button>
           )}
+        </fieldset>
+
+        <fieldset className="grid gap-2">
+          <legend className="mb-1 font-semibold">{t("Links each role submits")}</legend>
+          <p className="-mt-1 text-[0.72rem] text-[#5b6b7c]">{t("Each teammate sees these on the project page and shares them before handing in.")}</p>
+          {SQUAD_ROLES.filter((r) => (seats[r] ?? 0) > 0).map((role) => (
+            <div key={role} className="flex flex-wrap items-center gap-1.5 rounded-lg bg-[#f6f9fd] p-2">
+              <span className="w-20 shrink-0 text-[0.72rem] font-semibold text-[#14365a]">{t(role)}</span>
+              {SUBMIT_LINK_KINDS.map((kind) => {
+                const on = submits[role].includes(kind);
+                return (
+                  <button
+                    key={kind}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleSubmit(role, kind)}
+                    className={`rounded-full px-2.5 py-1 text-[0.7rem] font-semibold ${
+                      on ? "bg-[#0b6f86] text-white" : "bg-white text-[#5b6b7c] ring-1 ring-[#dfe7f1] hover:bg-[#eef3fa]"
+                    }`}
+                  >
+                    {t(SUBMIT_LABEL[kind])}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </fieldset>
+
+        <fieldset className="grid gap-3">
+          <legend className="mb-1 font-semibold">{t("Project brief (PRD)")}</legend>
+          {BRIEF_FIELDS.map((f) => (
+            <label key={f.key} className="grid gap-1 font-semibold">
+              {t(f.label)}
+              <span className="-mt-0.5 text-[0.7rem] font-normal text-[#5b6b7c]">{t(f.hint)}</span>
+              <textarea
+                maxLength={f.max}
+                rows={f.rows}
+                value={brief[f.key]}
+                onChange={(e) => setBrief((b) => ({ ...b, [f.key]: e.target.value }))}
+                className={`${FIELD} h-auto py-2 font-normal`}
+              />
+            </label>
+          ))}
         </fieldset>
 
         {error && <p role="alert" className="rounded-lg bg-[#fdecec] px-3 py-2 font-semibold text-[#b83232]">{error}</p>}

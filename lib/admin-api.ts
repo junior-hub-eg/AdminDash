@@ -451,6 +451,30 @@ export interface AdminProject {
   activeSquads: number;
   createdUtc: string;
   links: ProjectLink[];
+  brief: ProjectBrief;
+  /** The links each role of the team submits; roles not set by the admin get their usual links. */
+  requiredLinks: RequiredLinks[];
+}
+
+/** The PRD the squad reads on its project page; the list fields have one item per line. */
+export interface ProjectBrief {
+  problem: string;
+  goals: string;
+  targetUsers: string;
+  useCases: string;
+  /** User stories, for example "As a student I can post a lost item". */
+  requirements: string;
+  deliverables: string;
+  acceptanceCriteria: string;
+}
+
+/** The links a member submits for the project (WorkLinkKind on the backend). */
+export type SubmitLinkKind = "Figma" | "GitHub" | "LiveSite" | "Api" | "Demo" | "TestReport" | "Other";
+export const SUBMIT_LINK_KINDS: SubmitLinkKind[] = ["Figma", "GitHub", "LiveSite", "Api", "Demo", "TestReport", "Other"];
+
+export interface RequiredLinks {
+  role: SquadRole;
+  kinds: SubmitLinkKind[];
 }
 
 export interface ProjectInput {
@@ -461,6 +485,8 @@ export interface ProjectInput {
   seats: string;
   durationWeeks: number;
   links: ProjectLink[];
+  brief: ProjectBrief;
+  requiredLinks: RequiredLinks[];
 }
 
 export const getProjects = () => api.get<AdminProject[]>("/api/v1/admin/projects");
