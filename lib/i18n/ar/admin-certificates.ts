@@ -2,6 +2,7 @@
 export const adminCertificates: Record<string, string> = {
   "All Types": "كل الأنواع",
   "Approving signs the certificate with your name and notifies the student.": "الموافقة توقّع الشهادة باسمك وتُرسل إشعارًا للطالب.",
+  "Already signed": "موقّعة بالفعل",
   "Course Level": "مستوى كورس",
   "Course": "الكورس",
   "Capstone": "مشروع التخرّج",
