@@ -2,7 +2,7 @@
 
 import { certificateTitle } from "@/lib/certificate-title";
 import { useState, type FormEvent } from "react";
-import { Ban, GraduationCap, LoaderCircle, Medal, QrCode, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Ban, GraduationCap, LoaderCircle, Medal, QrCode, ShieldCheck } from "lucide-react";
 
 import { errorMessage } from "@/lib/api-client";
 import { approveCertificate, revokeCertificate, type AdminCertificate } from "@/lib/admin-certificates-api";
@@ -259,15 +259,22 @@ export default function CertificatePreview({
               <Ban className="size-[1em]" /> {t("Revoke")}
             </button>
           )}
-          <button
-            type="button"
-            onClick={approve}
-            disabled={!c || c.status !== "Pending" || busy !== null}
-            className="inline-flex items-center gap-[0.4em] rounded-[0.5em] bg-[#06b6d4] px-[1em] py-[0.5em] text-[0.72em] font-semibold text-white hover:bg-[#0aa5c0] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {busy === "approve" && <LoaderCircle className="size-[1em] animate-spin" />}
-            {t("Approve & Sign")}
-          </button>
+          {/* Only a certificate awaiting approval can be signed; a signed one says so instead of a dead button. */}
+          {c?.status === "Issued" ? (
+            <span className="inline-flex items-center gap-[0.4em] rounded-[0.5em] bg-[#dcf2e3] px-[1em] py-[0.5em] text-[0.72em] font-semibold text-[#1f7a43]">
+              <BadgeCheck className="size-[1em]" /> {t("Already signed")}
+            </span>
+          ) : c?.status === "Revoked" ? null : (
+            <button
+              type="button"
+              onClick={approve}
+              disabled={!c || busy !== null}
+              className="inline-flex items-center gap-[0.4em] rounded-[0.5em] bg-[#06b6d4] px-[1em] py-[0.5em] text-[0.72em] font-semibold text-white hover:bg-[#0aa5c0] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy === "approve" && <LoaderCircle className="size-[1em] animate-spin" />}
+              {t("Approve & Sign")}
+            </button>
+          )}
         </div>
       </div>
     </section>
