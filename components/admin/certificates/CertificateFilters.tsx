@@ -3,126 +3,88 @@
 import { CalendarDays, ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n/client";
+import { tk } from "@/lib/i18n/translate";
+import { PANEL } from "../page-parts";
 
-export type CertTab = "all" | "pending" | "issued" | "revoked";
-
-type Props = {
-  tab: CertTab;
-  onTab: (tab: CertTab) => void;
-  counts: Record<CertTab, number>;
-  query: string;
-  onQuery: (value: string) => void;
-  track: string;
-  onTrack: (value: string) => void;
-  tracks: string[];
-  cohort: string;
-  onCohort: (value: string) => void;
-  cohorts: string[];
-  onReset: () => void;
-};
-
-const TABS: { key: CertTab; label: string }[] = [
-  { key: "all", label: "All Certificates" },
-  { key: "pending", label: "Awaiting Approval" },
-  { key: "issued", label: "Issued & Verified" },
-  { key: "revoked", label: "Revoked" },
+const TABS = [
+  { key: "all", label: tk("All Certificates") },
+  { key: "pending", label: tk("Awaiting Approval") },
+  { key: "issued", label: tk("Issued & Verified") },
+  { key: "revoked", label: tk("Revoked") },
 ];
 
-const SELECT =
-  "h-10 w-full appearance-none rounded-xl border border-[#e1e8f0] bg-[#f4f8fb] ps-3.5 pe-9 text-[0.78rem] font-medium text-[#14365a] outline-none focus:border-[#06b6d4] focus:ring-2 focus:ring-[#06b6d4]/20";
+const BOX = "h-[2.9em] rounded-[0.6em] bg-[#eef3fb] text-[0.78em] text-[#0b1b2b] outline-none disabled:cursor-not-allowed";
 
-export default function CertificateFilters({
-  tab,
-  onTab,
-  counts,
-  query,
-  onQuery,
-  track,
-  onTrack,
-  tracks,
-  cohort,
-  onCohort,
-  cohorts,
-  onReset,
-}: Props) {
+/**
+ * Status tabs and the search / track / cohort bar of the design. With no certificates to list,
+ * the counts show "—" and the controls stay disabled until the certificates API exists.
+ */
+export default function CertificateFilters({ tracks }: { tracks: string[] }) {
   const { t } = useI18n();
+  const soon = t("Coming soon");
 
   return (
-    <div className="space-y-3">
-      <div role="tablist" aria-label={t("Certificate status")} className="flex flex-wrap gap-1.5 rounded-2xl bg-white p-2 shadow-sm">
-        {TABS.map(({ key, label }) => {
-          const active = tab === key;
-
-          return (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onTab(key)}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.78rem] font-semibold transition-colors ${
-                active ? "bg-[#e3f6fb] text-[#0a7f99]" : "text-[#14365a]/70 hover:bg-[#f1f6fa]"
-              }`}
-            >
-              {t(label)}
-              <span
-                className={`rounded-full px-2 py-0.5 text-[0.66rem] font-bold ${
-                  active ? "bg-[#bfeaf5] text-[#0a7f99]" : "bg-[#e8eef4] text-[#14365a]/70"
-                }`}
-              >
-                {counts[key].toLocaleString("en")}
-              </span>
-            </button>
-          );
-        })}
+    <div className="space-y-[0.8em]">
+      <div role="tablist" aria-label={t("Certificate status")} className={`${PANEL} flex flex-wrap gap-[0.3em] p-[0.5em]`}>
+        {TABS.map(({ key, label }, i) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={i === 0}
+            disabled={i !== 0}
+            title={i !== 0 ? soon : undefined}
+            className={`flex items-center gap-[0.5em] rounded-[0.6em] px-[1em] py-[0.6em] text-[0.78em] font-semibold disabled:cursor-not-allowed ${
+              i === 0 ? "bg-[#e3f3fb] text-[#0b6f86]" : "text-[#3d4f61]"
+            }`}
+          >
+            {t(label)}
+            <span className={`rounded-[0.4em] px-[0.5em] py-[0.05em] text-[0.85em] font-bold ${i === 0 ? "bg-[#c4e9f6] text-[#0b6f86]" : "bg-[#e6eefb] text-[#3d4f61]"}`}>
+              —
+            </span>
+          </button>
+        ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5 rounded-2xl bg-white p-3 shadow-sm">
-        <label className="relative min-w-[12rem] flex-1">
+      <div className={`${PANEL} flex flex-wrap items-center gap-[0.6em] p-[0.9em]`}>
+        <label className="relative min-w-[12em] flex-1">
           <span className="sr-only">{t("Search certificates")}</span>
-          <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-[#14365a]/45" />
+          <Search className="pointer-events-none absolute start-[0.9em] top-1/2 size-[1em] -translate-y-1/2 text-[#5b6b7c]" />
           <input
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
+            disabled
+            title={soon}
             placeholder={t("Search by student name, hash ID, capstone title...")}
-            className="h-10 w-full rounded-xl border border-[#e1e8f0] bg-[#f4f8fb] ps-10 pe-3 text-[0.78rem] text-[#14365a] outline-none placeholder:text-[#14365a]/45 focus:border-[#06b6d4] focus:ring-2 focus:ring-[#06b6d4]/20"
+            className={`${BOX} w-full ps-[2.6em] pe-[0.9em] placeholder:text-[#8a97a6]`}
           />
         </label>
 
-        <label className="relative w-40">
+        <label className="relative w-[11em]">
           <span className="sr-only">{t("Track")}</span>
-          <select value={track} onChange={(e) => onTrack(e.target.value)} className={SELECT}>
-            <option value="all">{t("All Tracks")}</option>
+          <select disabled title={soon} className={`${BOX} w-full appearance-none ps-[0.9em] pe-[2.2em]`}>
+            <option>{t("All Tracks")}</option>
             {tracks.map((x) => (
-              <option key={x} value={x}>
-                {t(x)}
-              </option>
+              <option key={x}>{x}</option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#14365a]/55" />
+          <ChevronDown className="pointer-events-none absolute end-[0.8em] top-1/2 size-[1em] -translate-y-1/2 text-[#5b6b7c]" />
         </label>
 
-        <label className="relative w-44">
+        <label className="relative w-[10em]">
           <span className="sr-only">{t("Cohort")}</span>
-          <select value={cohort} onChange={(e) => onCohort(e.target.value)} className={SELECT}>
-            <option value="all">{t("All Cohorts")}</option>
-            {cohorts.map((x) => (
-              <option key={x} value={x}>
-                {t(x)}
-              </option>
-            ))}
+          <select disabled title={soon} className={`${BOX} w-full appearance-none ps-[0.9em] pe-[2.2em]`}>
+            <option>{t("All Cohorts")}</option>
           </select>
-          <CalendarDays className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[#14365a]/55" />
+          <CalendarDays className="pointer-events-none absolute end-[0.8em] top-1/2 size-[1em] -translate-y-1/2 text-[#5b6b7c]" />
         </label>
 
         <button
           type="button"
-          onClick={onReset}
-          title={t("Reset filters")}
-          aria-label={t("Reset filters")}
-          className="grid size-10 place-items-center rounded-xl border border-[#e1e8f0] bg-[#f4f8fb] text-[#14365a]/60 hover:bg-[#e8f1f7]"
+          disabled
+          title={soon}
+          aria-label={t("Filter")}
+          className="grid size-[2.3em] place-items-center rounded-[0.6em] bg-[#eef3fb] text-[#5b6b7c] disabled:cursor-not-allowed"
         >
-          <SlidersHorizontal className="size-4" />
+          <SlidersHorizontal className="size-[1em]" />
         </button>
       </div>
     </div>

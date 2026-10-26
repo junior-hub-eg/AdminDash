@@ -1,18 +1,18 @@
 "use client";
 
-import { Download, Printer } from "lucide-react";
-import { getSystemReport, type CountItem, type SystemReport } from "@/lib/admin-api";
+import { Database, Download, Printer } from "lucide-react";
+import type { CountItem, SystemReport } from "@/lib/admin-api";
 import { useT } from "@/lib/i18n/client";
 import { dateLocale, tk, type TFunction } from "@/lib/i18n/translate";
-import { LoadState, useAdminData } from "./admin-data";
-
-const card = "rounded-[1.1em] bg-white p-[1.2em] shadow-[0_6px_22px_rgba(20,54,90,0.07)]";
+import { LoadState } from "./admin-data";
+import { BTN_PRIMARY, BTN_SECONDARY, PANEL } from "./page-parts";
+import { downloadCsv } from "./reports/ui";
 
 type Row = [label: string, value: number | string];
-type Group = { title: string; rows: Row[]; lists: [label: string, items: CountItem[]][] };
+export type Group = { title: string; rows: Row[]; lists: [label: string, items: CountItem[]][] };
 
 /** Every number of the system report, grouped the way the page and the CSV show them. */
-function groups(r: SystemReport): Group[] {
+export function systemGroups(r: SystemReport): Group[] {
   return [
     {
       title: tk("Users"),
@@ -127,34 +127,44 @@ function groups(r: SystemReport): Group[] {
   ];
 }
 
-/** The report as a CSV that opens in Excel (section, item, value), in the page's language. */
-function exportCsv(r: SystemReport, t: TFunction) {
-  const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-  const lines: (string | number)[][] = [[t("Section"), t("Item"), t("Value")]];
-  for (const g of groups(r)) {
+/** The system report as CSV rows (section, item, value), in the page's language. */
+export function systemCsvRows(r: SystemReport, t: TFunction) {
+  const lines: (string | number)[][] = [];
+  for (const g of systemGroups(r)) {
     for (const [label, value] of g.rows) lines.push([t(g.title), t(label), value]);
     for (const [label, items] of g.lists) for (const i of items) lines.push([t(g.title), `${t(label)}: ${t(i.key)}`, i.count]);
   }
-  const csv = "﻿" + lines.map((l) => l.map(cell).join(",")).join("\r\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `junior-hub-system-report-${r.generatedUtc.slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  return lines;
+}
+
+/** The whole report as a CSV that opens in Excel. */
+export function exportSystemCsv(r: SystemReport, t: TFunction) {
+  downloadCsv(`junior-hub-system-report-${r.generatedUtc.slice(0, 10)}.csv`, [[t("Section"), t("Item"), t("Value")], ...systemCsvRows(r, t)]);
 }
 
 /** Review notes: "ريبورت فيها كل تفاصيل السستم". GET admin/reports/system, with CSV export and print (save as PDF). */
-export function SystemReportPanel({ className = "" }: { className?: string }) {
+export function SystemReportPanel({
+  report: r,
+  error,
+  onRetry,
+  className = "",
+}: {
+  report: SystemReport | null;
+  error: string | null;
+  onRetry: () => void;
+  className?: string;
+}) {
   const t = useT();
-  const report = useAdminData(getSystemReport, tk("We couldn't load the report. Please try again."));
-  const r = report.data;
 
   return (
-    <section id="system-report" className={`${card} ${className}`}>
+    <section id="system-report" className={`${PANEL} min-w-0 scroll-mt-[2em] p-[1.2em] sm:p-[1.4em] ${className}`}>
       <header className="flex flex-wrap items-end justify-between gap-[0.8em]">
-        <div>
-          <h2 className="text-[1.2em] font-extrabold text-[#0b1b2b]">{t("Full System Report")}</h2>
+        <div className="flex min-w-0 items-start gap-[0.7em]">
+          <span className="grid size-[2.3em] shrink-0 place-items-center rounded-[0.7em] bg-[#e0f6fc] text-[#0b89a6]">
+            <Database className="size-[1.15em]" />
+          </span>
+          <div className="min-w-0">
+          <h2 className="text-[1.15em] font-bold text-[#0b1b2b]">{t("Full System Report")}</h2>
           <p className="text-[0.78em] text-[#5b6b7c]">
             {r
               ? t("Every part of the system in numbers · generated {date}", {
@@ -168,21 +178,22 @@ export function SystemReportPanel({ className = "" }: { className?: string }) {
                 })
               : t("Every part of the system in numbers")}
           </p>
+          </div>
         </div>
-        <div className="flex gap-[0.5em] text-[0.8em] print:hidden">
+        <div className="flex flex-wrap gap-[0.5em] print:hidden">
           <button
             type="button"
             disabled={!r}
             onClick={() => window.print()}
-            className="inline-flex items-center gap-[0.4em] rounded-[0.6em] border border-[#d5dee8] bg-white px-[1em] py-[0.5em] font-medium text-[#14365a] disabled:opacity-50"
+            className={BTN_SECONDARY}
           >
             <Printer className="size-[1em]" /> {t("Print / PDF")}
           </button>
           <button
             type="button"
             disabled={!r}
-            onClick={() => r && exportCsv(r, t)}
-            className="inline-flex items-center gap-[0.4em] rounded-[0.6em] bg-[#06b6d4] px-[1em] py-[0.5em] font-semibold text-white disabled:opacity-50"
+            onClick={() => r && exportSystemCsv(r, t)}
+            className={BTN_PRIMARY}
           >
             <Download className="size-[1em]" /> {t("Export Full Report")}
           </button>
@@ -190,11 +201,11 @@ export function SystemReportPanel({ className = "" }: { className?: string }) {
       </header>
 
       {!r ? (
-        <LoadState error={report.error} onRetry={report.reload} />
+        <LoadState error={error} onRetry={onRetry} />
       ) : (
         <div className="mt-[1em] grid gap-[1em] md:grid-cols-2 2xl:grid-cols-4">
-          {groups(r).map((g) => (
-            <article key={g.title} className="break-inside-avoid rounded-[0.9em] border border-[#e6edf3] p-[1em]">
+          {systemGroups(r).map((g) => (
+            <article key={g.title} className="break-inside-avoid rounded-[0.9em] bg-[#f5f8fe] p-[1em]">
               <h3 className="text-[0.95em] font-bold text-[#14365a]">{t(g.title)}</h3>
               <dl className="mt-[0.5em] grid gap-[0.3em] text-[0.78em]">
                 {g.rows.map(([label, value]) => (
@@ -210,7 +221,7 @@ export function SystemReportPanel({ className = "" }: { className?: string }) {
                     <p className="text-[0.7em] font-bold uppercase tracking-wide text-[#8a97a6]">{t(label)}</p>
                     <ul className="mt-[0.3em] flex flex-wrap gap-[0.3em] text-[0.72em]">
                       {items.map((i) => (
-                        <li key={i.key} className="rounded-full bg-[#eef3fa] px-[0.7em] py-[0.15em] text-[#14365a]">
+                        <li key={i.key} className="rounded-full bg-white px-[0.7em] py-[0.15em] text-[#14365a]">
                           {t(i.key)}: <b>{i.count}</b>
                         </li>
                       ))}

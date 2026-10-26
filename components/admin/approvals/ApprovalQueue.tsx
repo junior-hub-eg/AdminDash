@@ -1,9 +1,26 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Clock, ListFilter, LoaderCircle, RefreshCw } from "lucide-react";
+import {
+  ArrowLeftRight,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  GitBranch,
+  ListFilter,
+  LoaderCircle,
+  RefreshCw,
+  UserRoundPlus,
+  type LucideIcon,
+} from "lucide-react";
 
 import { useI18n } from "@/lib/i18n/client";
-import type { Priority, QueueItem } from "./types";
+import type { Priority, QueueItem, RequestSource } from "./types";
+
+const SOURCE_ICON: Record<RequestSource, LucideIcon> = {
+  signup: UserRoundPlus,
+  mentorChange: ArrowLeftRight,
+  trackRequest: GitBranch,
+};
 
 type Props = {
   rows: QueueItem[];
@@ -65,6 +82,12 @@ function pageList(page: number, count: number): (number | "gap")[] {
   return out;
 }
 
+function TypeIcon({ source }: { source: RequestSource }) {
+  const Icon = SOURCE_ICON[source];
+
+  return <Icon className="size-3.5 shrink-0 text-[#0a7f99]" />;
+}
+
 export default function ApprovalQueue({
   rows,
   total,
@@ -103,11 +126,9 @@ export default function ApprovalQueue({
             disabled={rows.length === 0}
             className="size-4 accent-[#06b6d4]"
           />
-          {t("Select All")} ({rows.length} {t("Visible")})
+          {t("Select All ({count} Visible)", { count: rows.length })}
           <span className="text-[#14365a]/30">|</span>
-          <span className="text-[#0a7f99]">
-            {selectedCount} {t("selected")}
-          </span>
+          <span className="text-[#0a7f99]">{t("{count} selected", { count: selectedCount })}</span>
         </label>
 
         <div className="flex items-center gap-2">
@@ -140,7 +161,7 @@ export default function ApprovalQueue({
 
       <div className="rounded-2xl bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[52rem] text-[0.78rem] text-[#14365a]">
+          <table className="w-full min-w-[46rem] text-[0.78rem] text-[#14365a]">
             <thead className="bg-[#f1f6fa]">
               <tr>
                 <th scope="col" className={th}>{t("Requester & Details")}</th>
@@ -186,9 +207,12 @@ export default function ApprovalQueue({
                         />
 
                         <span
-                          className={`grid size-10 shrink-0 place-items-center rounded-full text-[0.74rem] font-bold ${AVATAR_TONES[i % AVATAR_TONES.length]}`}
+                          className={`relative grid size-10 shrink-0 place-items-center rounded-full text-[0.74rem] font-bold ${AVATAR_TONES[i % AVATAR_TONES.length]}`}
                         >
                           {initials(r.name)}
+                          {r.priority === "urgent" && (
+                            <span className="absolute -bottom-0.5 -end-0.5 size-3 rounded-full bg-[#e04848] ring-2 ring-white" />
+                          )}
                         </span>
 
                         <div className="min-w-0">
@@ -208,8 +232,12 @@ export default function ApprovalQueue({
                     </td>
 
                     <td className="px-4 py-3.5">
-                      <p className="font-semibold">{t(r.typeLabel)}</p>
-                      <span className="mt-1 inline-block rounded-md bg-[#e8f4fa] px-2 py-1 text-[0.68rem] font-medium text-[#0a7f99]">
+                      <p className="flex items-center gap-1.5 font-semibold">
+                        <TypeIcon source={r.source} />
+                        {t(r.typeLabel)}
+                      </p>
+                      <span className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-[#e8f4fa] px-2 py-1 text-[0.68rem] font-medium text-[#0a7f99]">
+                        <span className="size-1.5 rounded-full bg-[#06b6d4]" />
                         {t(r.context)}
                       </span>
                     </td>
@@ -227,7 +255,18 @@ export default function ApprovalQueue({
                     </td>
 
                     <td className="px-4 py-3.5">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
+                      <div className="ms-auto grid w-fit grid-cols-2 items-center justify-items-end gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelect(r.id);
+                          }}
+                          aria-pressed={selected}
+                          className="rounded-lg bg-[#eef3fb] px-3 py-1.5 text-[0.72rem] font-semibold text-[#14365a] hover:bg-[#e3ecf7]"
+                        >
+                          {t("View")}
+                        </button>
                         <button
                           type="button"
                           disabled={locked}
@@ -247,7 +286,7 @@ export default function ApprovalQueue({
                             e.stopPropagation();
                             onApprove(r);
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#06b6d4] px-3 py-1.5 text-[0.72rem] font-semibold text-white hover:bg-[#0597b1] disabled:opacity-50"
+                          className="col-span-2 inline-flex items-center gap-1.5 rounded-lg bg-[#06b6d4] px-3 py-1.5 text-[0.72rem] font-semibold text-white shadow-[0_4px_10px_rgba(6,182,212,0.3)] hover:bg-[#0597b1] disabled:opacity-50"
                         >
                           {busy && <LoaderCircle className="size-3.5 animate-spin" />}
                           {t(r.primaryLabel)}
@@ -263,7 +302,7 @@ export default function ApprovalQueue({
 
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 text-[0.72rem] text-[#14365a]/65">
           <p>
-            {t("Showing")} {rows.length} {t("of")} {total} {t("pending approval tickets")}
+            {t("Showing {count} of {total} pending approval tickets", { count: rows.length, total })}
           </p>
 
           <nav aria-label={t("Pagination")} className="flex items-center gap-1">

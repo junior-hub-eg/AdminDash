@@ -23,6 +23,10 @@ export type RequestSource = "signup" | "mentorChange" | "trackRequest";
 export type QueueItem = {
   id: string;
   source: RequestSource;
+  /** When the request was sent: the priority, SLA line and Resolution Velocity are read from it. */
+  createdUtc: string;
+  /** Email of the requester when the API gives one (sign-ups): "Request Info" opens a mail to it. */
+  email?: string;
   /** For an approved mentor sign-up: offer them the students who wait for a mentor. */
   mentor?: { id: string; name: string; trackCode: string };
   kind: ApprovalKind;

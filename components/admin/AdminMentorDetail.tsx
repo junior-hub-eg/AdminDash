@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ArrowLeft } from "lucide-react";
-import { getAdminMentor, setMentorActive } from "@/lib/admin-api";
+import { getAdminMentor, getAdminSquads, getMentorStudents, setMentorActive } from "@/lib/admin-api";
 import { errorMessage } from "@/lib/api-client";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
@@ -20,16 +20,22 @@ import { CapacityWorkloadCard } from "./mentor-detail/CapacityWorkloadCard";
 import { UpcomingSessionsCard } from "./mentor-detail/UpcomingSessionsCard";
 import { WeeklyAvailabilityCard } from "./mentor-detail/WeeklyAvailabilityCard";
 import { AdminDirectControls } from "./mentor-detail/AdminDirectControls";
+import { EmptyCard } from "./mentor-detail/parts";
 
-/** One mentor: profile, workload, squads, students, sessions and feedback. */
+/** One mentor: profile, workload, squads, students. Sessions, availability and reviews have no API yet. */
 export default function AdminMentorDetail({ id }: { id: string }) {
   const t = useT();
-  const load = useCallback(() => getAdminMentor(id), [id]);
-  const mentor = useAdminData(load, tk("We couldn't load this mentor. Please try again."));
+  const loadMentor = useCallback(() => getAdminMentor(id), [id]);
+  const loadStudents = useCallback(() => getMentorStudents(id), [id]);
+  const mentor = useAdminData(loadMentor, tk("We couldn't load this mentor. Please try again."));
+  const students = useAdminData(loadStudents, tk("We couldn't load the students. Please try again."));
+  const squads = useAdminData(getAdminSquads, tk("We couldn't load the squads. Please try again."));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<MentorTab>("overview");
+  const [picking, setPicking] = useState(false);
   const m = mentor.data;
+  const mine = squads.data?.filter((s) => s.monitor?.id === id) ?? null;
 
   async function toggle() {
     if (!m) return;
@@ -44,6 +50,30 @@ export default function AdminMentorDetail({ id }: { id: string }) {
     }
   }
 
+  const onSquadAssigned = () => {
+    squads.reload();
+    mentor.reload();
+  };
+
+  const openPicker = () => {
+    setTab("overview");
+    setPicking(true);
+    requestAnimationFrame(() => document.getElementById("admin-direct-controls")?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  };
+
+  const squadsSection = (
+    <ActiveSquadsOversight squads={mine} error={squads.error} onRetry={squads.reload} full={tab === "squads"} />
+  );
+  const roster = (
+    <MentoredStudentsRoster
+      students={students.data}
+      error={students.error}
+      onRetry={students.reload}
+      limit={tab === "students" ? undefined : 4}
+      onViewAll={() => setTab("students")}
+    />
+  );
+
   return (
     <AdminSurface>
       <Link href={"/admin/mentors" as Route} className="inline-flex items-center gap-[0.4em] text-[0.85em] font-semibold text-[#14365a] hover:underline">
@@ -54,26 +84,46 @@ export default function AdminMentorDetail({ id }: { id: string }) {
         <LoadState error={mentor.error} onRetry={mentor.reload} />
       ) : (
         <>
-          <MentorProfileHeader mentor={m} saving={saving} error={error} onToggle={toggle} />
-          <MentorKpiStrip mentor={m} />
-          <MentorTabs value={tab} onChange={setTab} counts={{ squads: m.monitoredSquads, students: m.students, reviews: 142 }} />
+          <MentorProfileHeader mentor={m} saving={saving} error={error} onToggle={toggle} onReassign={openPicker}>
+            <MentorKpiStrip mentor={m} />
+          </MentorProfileHeader>
+          <MentorTabs
+            value={tab}
+            onChange={setTab}
+            counts={{ squads: mine?.length ?? m.monitoredSquads, students: students.data?.length ?? m.students }}
+          />
 
           {tab === "overview" ? (
             <div className="grid items-start gap-[1.2em] xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <div className="grid min-w-0 gap-[1.2em]">
-                <ActiveSquadsOversight />
-                <MentoredStudentsRoster total={m.students} />
-                <RecentStudentFeedback total={142} />
+                {squadsSection}
+                {roster}
+                <RecentStudentFeedback />
               </div>
               <div className="grid min-w-0 gap-[1.2em]">
-                <CapacityWorkloadCard />
+                <CapacityWorkloadCard mentor={m} students={students.data?.length ?? m.students} squads={mine?.length ?? m.monitoredSquads} />
                 <UpcomingSessionsCard />
                 <WeeklyAvailabilityCard />
-                <AdminDirectControls />
+                <AdminDirectControls
+                  mentor={m}
+                  squads={squads.data}
+                  students={students.data}
+                  picking={picking}
+                  onPicking={setPicking}
+                  onAssigned={onSquadAssigned}
+                />
               </div>
             </div>
+          ) : tab === "squads" ? (
+            squadsSection
+          ) : tab === "students" ? (
+            roster
+          ) : tab === "schedule" ? (
+            <EmptyCard title={t("Weekly Schedule & Availability")} text={t("This mentor hasn't shared a weekly schedule yet.")} />
+          ) : tab === "reviews" ? (
+            <EmptyCard title={t("Student Reviews")} text={t("No student reviews to show yet.")} />
           ) : (
-            <p className="rounded-[1.1em] bg-white p-[2em] text-center text-[0.9em] text-[#5b6b7c]">{t("Coming soon")}</p>
+            <EmptyCard title={t("Performance & Evaluation")} text={t("No performance evaluations recorded yet.")} />
           )}
         </>
       )}

@@ -1,65 +1,60 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { CircleAlert, CircleCheck, CircleX, QrCode } from "lucide-react";
+import { CircleCheck, CircleX, LoaderCircle, ScanQrCode, ScanLine } from "lucide-react";
 
+import { ApiError, errorMessage } from "@/lib/api-client";
+import { verifyCertificate, type VerifiedCertificate } from "@/lib/admin-certificates-api";
 import { useI18n } from "@/lib/i18n/client";
-import { dateLocale } from "@/lib/i18n/translate";
-import type { MockCertificate } from "../dashboardMock";
+import { dateLocale, tk } from "@/lib/i18n/translate";
+import { PANEL } from "../page-parts";
 
-type Props = {
-  certs: MockCertificate[];
-  /** Pre-filled credential id (without #), e.g. the selected certificate. */
-  initialId?: string;
-};
-
-type Result = { kind: "valid" | "pending" | "revoked"; cert: MockCertificate } | { kind: "missing" } | null;
+type Result = { kind: "valid"; cert: VerifiedCertificate } | { kind: "missing" } | { kind: "error"; message: string } | null;
 
 const normalize = (v: string) => v.replace(/[#\s]/g, "").toUpperCase();
 
-export default function VerificationGateway({ certs, initialId = "" }: Props) {
+/** Checks a certificate code against the public verify endpoint (GET recruitment/certificates/{code}). */
+export default function VerificationGateway() {
   const { t } = useI18n();
 
-  const [value, setValue] = useState(initialId ? `#${initialId}` : "");
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result>(null);
 
-  // TODO(api): GET public verify-by-credential-id (on-chain hash lookup).
-  const verify = (e: FormEvent) => {
+  const verify = async (e: FormEvent) => {
     e.preventDefault();
-
-    const id = normalize(value);
-
-    if (!id) {
-      setResult(null);
-
-      return;
+    const code = normalize(value);
+    if (!code) return;
+    setBusy(true);
+    setResult(null);
+    try {
+      setResult({ kind: "valid", cert: await verifyCertificate(code) });
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 404 || err.status === 400)) setResult({ kind: "missing" });
+      else setResult({ kind: "error", message: errorMessage(err, tk("We couldn't check this certificate. Please try again.")) });
+    } finally {
+      setBusy(false);
     }
-
-    const cert = certs.find((c) => normalize(c.credentialId) === id);
-
-    if (!cert) setResult({ kind: "missing" });
-    else setResult({ kind: cert.status === "issued" ? "valid" : cert.status, cert });
   };
 
-  const formatDate = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(dateLocale(), { dateStyle: "medium" });
+  const formatDate = (iso: string) => new Date(iso).toLocaleDateString(dateLocale("en-US"), { dateStyle: "medium" });
 
   return (
-    <section className="rounded-2xl bg-white p-5 shadow-sm" aria-labelledby="cert-verify-title">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="grid size-9 place-items-center rounded-xl bg-[#e3f6fb] text-[#0a7f99]">
-          <QrCode className="size-[18px]" />
+    <section className={`${PANEL} p-[1.3em]`} aria-labelledby="cert-verify-title">
+      <div className="mb-[1em] flex items-center gap-[0.8em]">
+        <span className="grid size-[2.3em] shrink-0 place-items-center rounded-[0.6em] bg-[#e6eefb] text-[#14365a]">
+          <ScanQrCode className="size-[1.15em]" />
         </span>
         <div>
-          <h2 id="cert-verify-title" className="text-[0.95rem] font-bold text-[#0d2a45]">
+          <h2 id="cert-verify-title" className="text-[1.05em] font-bold text-[#0b1b2b]">
             {t("Public Verification Gateway")}
           </h2>
-          <p className="text-[0.72rem] text-[#14365a]/60">{t("Validate authenticity via tamper-proof hash")}</p>
+          <p className="text-[0.72em] text-[#5b6b7c]">{t("Validate authenticity via tamper-proof hash")}</p>
         </div>
       </div>
 
-      <form onSubmit={verify} className="flex gap-2.5">
-        <label className="min-w-0 flex-1">
+      <form onSubmit={verify} className="flex gap-[0.6em]">
+        <label className="relative min-w-0 flex-1">
           <span className="sr-only">{t("Credential ID")}</span>
           <input
             dir="ltr"
@@ -68,60 +63,62 @@ export default function VerificationGateway({ certs, initialId = "" }: Props) {
               setValue(e.target.value);
               setResult(null);
             }}
-            placeholder="#JH-CERT-0000"
-            className="h-10 w-full rounded-xl border border-[#e1e8f0] bg-[#eef6fb] px-3.5 font-mono text-[0.78rem] text-[#14365a] outline-none placeholder:text-[#14365a]/40 focus:border-[#06b6d4] focus:ring-2 focus:ring-[#06b6d4]/20"
+            placeholder="#JH-SIM-4F7K2Q"
+            className="h-[2.9em] w-full rounded-[0.6em] bg-[#eef3fb] pe-[2.6em] ps-[0.9em] text-[0.8em] text-[#0b1b2b] outline-none placeholder:text-[#8a97a6] focus:ring-2 focus:ring-[#06b6d4]/40"
           />
+          <ScanLine className="pointer-events-none absolute end-[0.8em] top-1/2 size-[1.05em] -translate-y-1/2 text-[#5b6b7c]" aria-hidden />
         </label>
 
         <button
           type="submit"
-          className="h-10 shrink-0 rounded-xl bg-[#06b6d4] px-4 text-[0.78rem] font-semibold text-white hover:bg-[#0597b1]"
+          disabled={busy || !normalize(value)}
+          className="inline-flex h-[2.9em] shrink-0 items-center gap-[0.4em] rounded-[0.6em] bg-[#06b6d4] px-[1.1em] text-[0.8em] font-semibold text-white hover:bg-[#0aa5c0] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {t("Instant Verify")}
+          {busy && <LoaderCircle className="size-[1em] animate-spin" />} {t("Instant Verify")}
         </button>
       </form>
 
       <div role="status" aria-live="polite">
         {result?.kind === "valid" && (
-          <div className="mt-3 flex items-start gap-3 rounded-xl bg-[#dbe8ff] p-3.5 text-[#14365a]">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#0f6b57] text-white">
-              <CircleCheck className="size-[18px]" />
+          <div className="mt-[0.9em] flex items-start gap-[0.8em] rounded-[0.6em] bg-[#dbe8ff] p-[0.9em] text-[#14365a]">
+            <span className="grid size-[2em] shrink-0 place-items-center rounded-full bg-[#0f6b57] text-white">
+              <CircleCheck className="size-[1.1em]" />
             </span>
-            <div className="text-[0.74rem]">
-              <p className="font-semibold">
-                {t("Valid & Authenticated Certificate")} <span className="mx-1 text-[#14365a]/50">•</span>
-                <span className="font-medium text-[#14365a]/70">{t("On-Chain")}</span>
+            <div className="min-w-0 text-[0.75em]">
+              <p className="font-semibold text-[#0b6f86]">
+                {t("Valid & Authenticated Certificate")}
+                {result.cert.isSimulation && (
+                  <>
+                    <span className="mx-[0.4em] text-[#14365a]/50">•</span>
+                    <span className="font-medium text-[#3d4f61]">{t("Simulation")}</span>
+                  </>
+                )}
               </p>
-              <p className="mt-0.5 text-[#14365a]/75">
-                {t("Issued")} {formatDate(result.cert.date)} • {t("Cryptographically Sealed")} • {t("SHA-256 Validated")}
+              <p className="mt-[0.2em] font-semibold text-[#0b1b2b]">
+                {result.cert.studentName} — {result.cert.role} · {result.cert.companyName}
               </p>
-              <p className="mt-0.5 font-medium">
-                {result.cert.student} — {result.cert.title}
+              <p className="mt-[0.2em] text-[#3d4f61]">
+                {t("Issued")} {formatDate(result.cert.issuedUtc)} • {result.cert.trackName} • {t("Score")} {result.cert.scorePercent}%
               </p>
+              <p className="mt-[0.2em] text-[#3d4f61]" dir="ltr">
+                #{result.cert.code}
+              </p>
+              {result.cert.disclaimer && <p className="mt-[0.3em] italic text-[#5b6b7c]">{result.cert.disclaimer}</p>}
             </div>
           </div>
         )}
 
-        {result?.kind === "pending" && (
-          <div className="mt-3 flex items-start gap-3 rounded-xl bg-[#fff1da] p-3.5 text-[#7a4a0a]">
-            <CircleAlert className="mt-0.5 size-5 shrink-0" />
-            <p className="text-[0.74rem] font-medium">
-              {t("This certificate exists but is still awaiting admin & mentor sign-off, so it is not verifiable yet.")}
-            </p>
-          </div>
-        )}
-
-        {result?.kind === "revoked" && (
-          <div className="mt-3 flex items-start gap-3 rounded-xl bg-[#ffe6e6] p-3.5 text-[#8f1f1f]">
-            <CircleX className="mt-0.5 size-5 shrink-0" />
-            <p className="text-[0.74rem] font-medium">{t("This certificate has been revoked and is no longer valid.")}</p>
-          </div>
-        )}
-
         {result?.kind === "missing" && (
-          <div className="mt-3 flex items-start gap-3 rounded-xl bg-[#eef2f7] p-3.5 text-[#14365a]">
-            <CircleX className="mt-0.5 size-5 shrink-0 text-[#14365a]/60" />
-            <p className="text-[0.74rem] font-medium">{t("No certificate was found for this credential ID.")}</p>
+          <div className="mt-[0.9em] flex items-start gap-[0.7em] rounded-[0.6em] bg-[#eef2f7] p-[0.9em] text-[#14365a]">
+            <CircleX className="mt-[0.1em] size-[1.2em] shrink-0 text-[#5b6b7c]" />
+            <p className="text-[0.75em] font-medium">{t("No certificate was found for this credential ID.")}</p>
+          </div>
+        )}
+
+        {result?.kind === "error" && (
+          <div className="mt-[0.9em] flex items-start gap-[0.7em] rounded-[0.6em] bg-[#fdecec] p-[0.9em] text-[#b83232]">
+            <CircleX className="mt-[0.1em] size-[1.2em] shrink-0" />
+            <p className="text-[0.75em] font-medium">{result.message}</p>
           </div>
         )}
       </div>

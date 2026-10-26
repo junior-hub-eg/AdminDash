@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { Download, Plus, UserX, Video } from "lucide-react";
+import { BadgeCheck, CalendarX2, Download, Gauge, UserPlus, UserX, Video } from "lucide-react";
 import { getAdminMentors, getApprovals, type AdminMentor, type AdminMentorsPage } from "@/lib/admin-api";
 import { useI18n } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
@@ -14,13 +14,6 @@ import { MentorsTable } from "./MentorsTable";
 import { UnassignedStudents } from "./UnassignedStudents";
 
 const card = "rounded-[1.1em] bg-white p-[1.2em] shadow-[0_6px_22px_rgba(20,54,90,0.07)]";
-
-/** TEMPORARY: the API has no session list yet (only a count). Replace with a real endpoint, then delete. */
-const MOCK_SESSIONS = [
-  { title: tk("Design Critique: Checkout Flow"), who: "Dr. Tarek Fayed · Design Masters", time: "04:00 PM - 05:30 PM", tag: tk("Today"), action: tk("Join Room") },
-  { title: tk("Go Microservices Debugging"), who: "Eng. Khaled Mostafa · Server Squad", time: "06:30 PM - 07:30 PM", tag: tk("Tomorrow"), action: tk("Link Active") },
-  { title: tk("React State Management Lab"), who: "Eng. Mona Zaki · Code Crew", time: "05:00 PM - 06:30 PM", tag: tk("Oct 24"), action: tk("Auto-calendar sync") },
-];
 
 const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
@@ -109,11 +102,12 @@ export default function AdminMentors() {
   const onChanged = (updated: AdminMentor) =>
     page.setData((p) => (p ? { ...p, mentors: p.mentors.map((m) => (m.id === updated.id ? updated : m)) } : p));
 
-  // Workload from the squads each mentor monitors: none = available, 1-2 = balanced, more than 2 = high load.
-  const high = mentors.filter((m) => m.monitoredSquads > 2).length;
-  const available = mentors.filter((m) => m.monitoredSquads === 0).length;
-  const balanced = mentors.length - high - available;
-  const optimal = mentors.length ? Math.round((balanced / mentors.length) * 100) : 0;
+  // Workload of the active mentors, from the squads each one monitors: none = available, 1-2 = balanced, more than 2 = high load.
+  const working = mentors.filter((m) => m.isActive);
+  const high = working.filter((m) => m.monitoredSquads > 2).length;
+  const available = working.filter((m) => m.monitoredSquads === 0).length;
+  const balanced = working.length - high - available;
+  const optimal = working.length ? Math.round((balanced / working.length) * 100) : 0;
 
   return (
     <AdminPage>
@@ -125,7 +119,7 @@ export default function AdminMentors() {
               <Link href={"/admin/dashboard" as Route} className="hover:underline">
                 {t("Admin")}
               </Link>{" "}
-              <span aria-hidden>›</span> <span className="text-[#14365a]">{t("Mentors Management")}</span>
+              <span aria-hidden className="rtl:inline-block rtl:rotate-180">›</span> <span className="font-semibold text-[#0b6f86]">{t("Mentors Management")}</span>
             </nav>
             <h1 className="text-[2em] font-extrabold leading-tight text-[#0b1b2b]">{t("Mentors Management")}</h1>
             <p className="max-w-[34em] text-[0.85em] text-[#5b6b7c]">
@@ -137,7 +131,7 @@ export default function AdminMentors() {
               type="button"
               onClick={() => exportRoster(mentors)}
               disabled={mentors.length === 0}
-              className="inline-flex items-center gap-[0.4em] rounded-[0.6em] border border-[#d5dee8] bg-white px-[1em] py-[0.55em] font-medium text-[#14365a] disabled:opacity-50"
+              className="inline-flex items-center gap-[0.4em] rounded-[0.6em] border border-[#e1e8f0] bg-white px-[1.1em] py-[0.6em] font-semibold text-[#14365a] shadow-sm hover:bg-[#f1f6fb] disabled:opacity-50"
             >
               <Download className="size-[1em]" /> {t("Export Roster")}
             </button>
@@ -153,14 +147,14 @@ export default function AdminMentors() {
             </button>
             <Link
               href={"/admin/mentors/new" as Route}
-              className="inline-flex items-center gap-[0.4em] rounded-[0.6em] bg-[#1d6fe0] px-[1.1em] py-[0.55em] font-semibold text-white hover:bg-[#1859b5]"
+              className="inline-flex items-center gap-[0.4em] rounded-[0.6em] bg-[#06b6d4] px-[1.2em] py-[0.6em] font-semibold text-white shadow-[0_6px_16px_rgba(6,182,212,0.35)] hover:bg-[#0aa5c0]"
             >
-              <Plus className="size-[1.1em]" /> {t("Add Mentor")}
+              <UserPlus className="size-[1.1em]" /> {t("Add Mentor")}
             </Link>
           </div>
         </section>
 
-        <MentorStats stats={stats} pending={pending} className="mt-[1.2em]" />
+        <MentorStats stats={stats} mentors={mentors} pending={pending} className="mt-[1.2em]" />
 
         {showUnassigned && (
           <div className="mt-[1.2em]">
@@ -181,8 +175,13 @@ export default function AdminMentors() {
           <div className="grid min-w-0 content-start gap-[1.2em] md:grid-cols-2 xl:grid-cols-1">
             {/* Workload */}
             <article className={card}>
-              <h2 className="text-[1.05em] font-bold text-[#14365a]">{t("Mentor Workload")}</h2>
-              <p className="text-[0.75em] text-[#8a97a6]">{t("Capacity distribution across all active technical tracks and study squads.")}</p>
+              <header className="flex items-start justify-between gap-[0.6em]">
+                <h2 className="inline-flex items-center gap-[0.4em] text-[1.05em] font-bold text-[#0b1b2b]">
+                  <Gauge className="size-[1.05em] text-[#06b6d4]" /> {t("Mentor Workload")}
+                </h2>
+                <span className="text-[0.65em] font-semibold uppercase tracking-[0.1em] text-[#5b6b7c]">{t("This Cohort")}</span>
+              </header>
+              <p className="mt-[0.3em] text-[0.75em] text-[#5b6b7c]">{t("Capacity distribution across all active technical tracks and study squads.")}</p>
               {page.data ? (
                 <>
                   <div className="mt-[1em] flex flex-wrap items-center justify-center gap-[1.2em]">
@@ -191,7 +190,7 @@ export default function AdminMentors() {
                       sub={t("Optimal")}
                       segments={[
                         { value: balanced, color: "#06b6d4" },
-                        { value: available, color: "#7fddc9" },
+                        { value: available, color: "#14b8a6" },
                         { value: high, color: "#d92d2d" },
                       ]}
                     />
@@ -200,7 +199,7 @@ export default function AdminMentors() {
                         <span className="size-[0.7em] rounded-full bg-[#06b6d4]" /> {t("Balanced (1-2 Squads)")}: <b>{balanced}</b>
                       </li>
                       <li className="flex items-center gap-[0.6em]">
-                        <span className="size-[0.7em] rounded-full bg-[#7fddc9]" /> {t("Available Capacity")}: <b>{available}</b>
+                        <span className="size-[0.7em] rounded-full bg-[#14b8a6]" /> {t("Available Capacity")}: <b>{available}</b>
                       </li>
                       <li className="flex items-center gap-[0.6em]">
                         <span className="size-[0.7em] rounded-full bg-[#d92d2d]" /> {t("High Load (>2 Squads)")}: <b>{high}</b>
@@ -208,7 +207,7 @@ export default function AdminMentors() {
                     </ul>
                   </div>
                   <p className="mt-[1em] flex items-center justify-between rounded-[0.6em] bg-[#f4f7fb] px-[1em] py-[0.6em] text-[0.75em] text-[#5b6b7c]">
-                    {t("Optimal Target per Mentor:")} <b className="text-[#1d6fe0]">{t("8-12 Students")}</b>
+                    {t("Optimal Target per Mentor:")} <b className="text-[#0b6f86]">{t("8-12 Students")}</b>
                   </p>
                 </>
               ) : (
@@ -216,38 +215,32 @@ export default function AdminMentors() {
               )}
             </article>
 
-            {/* Upcoming sessions */}
+            {/* Upcoming sessions: the API only gives a count, no session list yet. */}
             <article className={card}>
-              <header className="flex items-center justify-between gap-[0.6em]">
-                <h2 className="text-[1.05em] font-bold text-[#14365a]">{t("Upcoming Sessions")}</h2>
-                {stats && (
-                  <span className="rounded-full bg-[#eaf1fd] px-[0.7em] py-[0.15em] text-[0.75em] font-semibold text-[#1d6fe0]">
-                    {stats.upcomingSessions}
-                  </span>
-                )}
+              <header className="flex items-start justify-between gap-[0.6em]">
+                <h2 className="inline-flex items-center gap-[0.5em] text-[1.05em] font-bold text-[#0b1b2b]">
+                  <Video className="size-[1.05em] text-[#0b6f86]" /> {t("Upcoming Sessions")}
+                </h2>
+                <span className="text-[0.72em] font-semibold text-[#0b6f86]">
+                  {stats ? t("{count} scheduled", { count: stats.upcomingSessions }) : "—"}
+                </span>
               </header>
-              <ul className="mt-[0.8em] space-y-[0.6em]">
-                {MOCK_SESSIONS.map((s) => (
-                  <li key={s.title} className="rounded-[0.7em] bg-[#f4f7fb] p-[0.8em] text-[0.75em]">
-                    <div className="flex items-start justify-between gap-[0.6em]">
-                      <p className="font-bold text-[#0b1b2b]">{t(s.title)}</p>
-                      <span className="shrink-0 rounded-full bg-[#dbe8fb] px-[0.6em] py-[0.1em] text-[0.85em] font-semibold text-[#14365a]">{t(s.tag)}</span>
-                    </div>
-                    <p className="mt-[0.2em] text-[#5b6b7c]">{s.who}</p>
-                    <p className="mt-[0.5em] flex items-center justify-between text-[#14365a]">
-                      <span>{s.time}</span>
-                      <span className="inline-flex items-center gap-[0.3em] font-semibold text-[#1d6fe0]">
-                        {s.action === "Join Room" && <Video className="size-[1em]" />} {t(s.action)}
-                      </span>
-                    </p>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-[0.9em] grid place-items-center gap-[0.4em] rounded-[0.8em] bg-[#f4f8fd] px-[1em] py-[1.6em] text-center">
+                <CalendarX2 className="size-[1.6em] text-[#8a97a6]" />
+                <p className="text-[0.8em] font-semibold text-[#14365a]">
+                  {stats && stats.upcomingSessions > 0 ? t("Session details aren't available yet") : t("No upcoming sessions")}
+                </p>
+              </div>
             </article>
 
             {/* Recruitment pipeline */}
-            <article className="rounded-[1.1em] bg-gradient-to-br from-[#0b1b2b] to-[#14365a] p-[1.2em] text-white shadow-[0_6px_22px_rgba(20,54,90,0.18)] md:col-span-2 xl:col-span-1">
-              <p className="text-[0.65em] font-bold uppercase tracking-[0.18em] text-[#7fddc9]">{t("Recruitment Pipeline")}</p>
+            <article className="rounded-[1.1em] bg-gradient-to-br from-[#0b1b2b] to-[#16314f] p-[1.3em] text-white shadow-[0_6px_22px_rgba(20,54,90,0.18)] md:col-span-2 xl:col-span-1">
+              <p className="inline-flex items-center gap-[0.6em] text-[0.65em] font-bold uppercase tracking-[0.14em] text-[#2be3c4]">
+                <span className="grid size-[2.2em] place-items-center rounded-[0.5em] bg-[#2be3c4]/15">
+                  <BadgeCheck className="size-[1.3em]" />
+                </span>
+                {t("Recruitment Pipeline")}
+              </p>
               <h2 className="mt-[0.4em] text-[1.3em] font-bold leading-tight">
                 {pending === null
                   ? "—"

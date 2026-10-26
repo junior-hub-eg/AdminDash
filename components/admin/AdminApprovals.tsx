@@ -1,7 +1,19 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { BadgeCheck, CheckCheck, ClipboardList, LoaderCircle, SlidersHorizontal, UserCheck, UsersRound } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeftRight,
+  BadgeCheck,
+  CalendarCheck,
+  CheckCheck,
+  ClipboardList,
+  LoaderCircle,
+  Rocket,
+  SlidersHorizontal,
+  UserCheck,
+  UsersRound,
+} from "lucide-react";
 
 import {
   APPROVALS_CHANGED,
@@ -20,7 +32,7 @@ import {
 } from "@/lib/admin-api";
 import { errorMessage } from "@/lib/api-client";
 import { useT } from "@/lib/i18n/client";
-import { tk } from "@/lib/i18n/translate";
+import { dateLocale, tk } from "@/lib/i18n/translate";
 import { AdminDialog } from "./AdminPageFrame";
 import { LoadState, useAdminData } from "./admin-data";
 import ApprovalInspector from "./approvals/ApprovalInspector";
@@ -28,8 +40,9 @@ import ApprovalQueue from "./approvals/ApprovalQueue";
 import ApprovalTabs from "./approvals/ApprovalTabs";
 import ResolutionVelocity from "./approvals/ResolutionVelocity";
 import type { ApprovalTab, Priority, QueueItem } from "./approvals/types";
+import { ageHours, priorityFor, shortSpan, SLA_HOURS } from "./approvals/age";
+import { SquadStat } from "./squad-detail/SquadStat";
 import { AdminSurface } from "./page-parts";
-import StatTile from "./StatTile";
 import { StarterStudents } from "./StarterStudents";
 
 const PAGE_SIZE = 5;
@@ -43,37 +56,47 @@ const SUBJECT_LABEL: Record<AdminApproval["subjects"][number], string> = {
 
 const RANK: Record<Priority, number> = { urgent: 0, medium: 1, normal: 2 };
 
+/** The time a set of lists arrived (so ages stay stable between renders). */
+const stamp = (lists: unknown[]) => (lists.length ? Date.now() : 0);
+
 type T = ReturnType<typeof useT>;
 
-function ago(iso: string) {
-  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+/** Age, priority and SLA line of a request, read from when it was sent. */
+function timing(createdUtc: string, now: number, t: T) {
+  const hours = ageHours(createdUtc, now);
+  const left = SLA_HOURS - hours;
 
-  if (mins < 60) return `${mins}m ago`;
-
-  const hours = Math.round(mins / 60);
-
-  if (hours < 48) return `${hours}h ago`;
-
-  return `${Math.round(hours / 24)}d ago`;
+  return {
+    createdUtc,
+    priority: priorityFor(hours),
+    submitted: t("{time} ago", { time: shortSpan(hours) }),
+    sla: left > 0 ? t("SLA: {time} remain", { time: shortSpan(left) }) : t("SLA breached by {time}", { time: shortSpan(-left) }),
+    slaAlert: left <= 0,
+    slaProgress: {
+      label: tk("SLA window used"),
+      pct: Math.min(100, (hours / SLA_HOURS) * 100),
+      note: t("{used} of {total}", { used: shortSpan(hours), total: `${SLA_HOURS}h` }),
+    },
+  };
 }
 
 /** A real mentor / teacher sign-up becomes one row of the queue. */
-function signupToItem(a: AdminApproval, t: T): QueueItem {
+function signupToItem(a: AdminApproval, t: T, now: number): QueueItem {
   const isMentor = a.role === "Mentor";
+  const { slaProgress, ...time } = timing(a.createdUtc, now, t);
 
   return {
     id: a.id,
     source: "signup",
+    ...time,
+    email: a.email,
     mentor: isMentor && a.trackCode ? { id: a.id, name: a.fullName, trackCode: a.trackCode } : undefined,
     kind: "signup",
-    priority: "normal",
     name: a.fullName,
     subtitle: isMentor ? t("Mentor Applicant") : t("Teacher Applicant"),
     note: a.phone ? `${a.email} · ${a.phone}` : a.email,
     typeLabel: isMentor ? t("Mentor Onboarding") : t("Teacher Onboarding"),
     context: (isMentor ? a.trackName : a.schoolName) ?? "—",
-    submitted: ago(a.createdUtc),
-    sla: t("Under Initial Review"),
     primaryLabel: t("Approve"),
     inspector: {
       ticket: `#SU-${a.id.replace(/-/g, "").slice(0, 4).toUpperCase()}`,
@@ -90,25 +113,26 @@ function signupToItem(a: AdminApproval, t: T): QueueItem {
             { label: "Subjects", value: a.subjects.map((s) => t(SUBJECT_LABEL[s])).join(" · ") || "—" },
             { label: "Grades", value: a.grades.join(", ") || "—" },
           ],
+      progress: slaProgress,
       approveLabel: t("Approve & Notify"),
     },
   };
 }
 
 /** A student asked to change their mentor: approving gives them the requested mentor in that track. */
-function mentorChangeToItem(r: AdminMentorRequest, t: T): QueueItem {
+function mentorChangeToItem(r: AdminMentorRequest, t: T, now: number): QueueItem {
+  const { slaProgress, ...time } = timing(r.createdUtc, now, t);
+
   return {
     id: r.id,
     source: "mentorChange",
+    ...time,
     kind: "session",
-    priority: "medium",
     name: r.student.fullName,
     subtitle: t("Student • {track}", { track: r.trackName }),
     note: t("Wants {mentor} as their mentor", { mentor: r.requestedMentor.fullName }),
     typeLabel: t("Mentor Change"),
     context: r.trackName,
-    submitted: ago(r.createdUtc),
-    sla: t("Waiting for your decision"),
     primaryLabel: t("Approve"),
     inspector: {
       ticket: `#MC-${r.id.replace(/-/g, "").slice(0, 4).toUpperCase()}`,
@@ -118,25 +142,26 @@ function mentorChangeToItem(r: AdminMentorRequest, t: T): QueueItem {
         { label: "Current mentor", value: r.currentMentor?.fullName ?? t("No mentor yet") },
         { label: "Requested mentor", value: r.requestedMentor.fullName, accent: true },
       ],
+      progress: slaProgress,
       approveLabel: t("Approve & Notify"),
     },
   };
 }
 
 /** A mentor asked to teach another track too: approving lists, matches and books them in it. */
-function trackRequestToItem(r: AdminTrackRequest, t: T): QueueItem {
+function trackRequestToItem(r: AdminTrackRequest, t: T, now: number): QueueItem {
+  const { slaProgress, ...time } = timing(r.createdUtc, now, t);
+
   return {
     id: r.id,
     source: "trackRequest",
+    ...time,
     kind: "session",
-    priority: "normal",
     name: r.mentor.fullName,
     subtitle: t("Mentor • {track}", { track: r.currentTrackName }),
     note: r.note ?? t("Wants to teach {track} too", { track: r.trackName }),
     typeLabel: t("New Track Request"),
     context: r.trackName,
-    submitted: ago(r.createdUtc),
-    sla: t("Waiting for your decision"),
     primaryLabel: t("Approve"),
     inspector: {
       ticket: `#TR-${r.id.replace(/-/g, "").slice(0, 4).toUpperCase()}`,
@@ -146,6 +171,7 @@ function trackRequestToItem(r: AdminTrackRequest, t: T): QueueItem {
         { label: "Current track", value: r.currentTrackName },
         { label: "Requested track", value: r.trackName, accent: true },
       ],
+      progress: slaProgress,
       quote: r.note ? { title: t("Note"), by: r.mentor.fullName, text: r.note } : undefined,
       approveLabel: t("Approve & Notify"),
     },
@@ -176,15 +202,22 @@ export default function AdminApprovals() {
   const [declining, setDeclining] = useState<QueueItem | null>(null);
   const [reason, setReason] = useState("");
 
+  // The time the lists arrived: ages, priorities and "Updated" are read against it.
+  const now = useMemo(
+    () => stamp([approvals.data, mentorRequests.data, trackRequests.data]),
+    [approvals.data, mentorRequests.data, trackRequests.data],
+  );
+
   const queue = useMemo(() => {
     const rows = [
-      ...(approvals.data ?? []).map((a) => signupToItem(a, t)),
-      ...(mentorRequests.data ?? []).map((r) => mentorChangeToItem(r, t)),
-      ...(trackRequests.data ?? []).map((r) => trackRequestToItem(r, t)),
+      ...(approvals.data ?? []).map((a) => signupToItem(a, t, now)),
+      ...(mentorRequests.data ?? []).map((r) => mentorChangeToItem(r, t, now)),
+      ...(trackRequests.data ?? []).map((r) => trackRequestToItem(r, t, now)),
     ];
 
-    return rows.sort((a, b) => RANK[a.priority] - RANK[b.priority]);
-  }, [approvals.data, mentorRequests.data, trackRequests.data, t]);
+    // Most urgent first, then the oldest.
+    return rows.sort((a, b) => RANK[a.priority] - RANK[b.priority] || a.createdUtc.localeCompare(b.createdUtc));
+  }, [approvals.data, mentorRequests.data, trackRequests.data, t, now]);
 
   // Everything except the tab: the tab counts are computed on this.
   const base = useMemo(() => (priority === "all" ? queue : queue.filter((r) => r.priority === priority)), [queue, priority]);
@@ -211,6 +244,11 @@ export default function AdminApprovals() {
   const selectedCount = queue.filter((r) => checked.has(r.id)).length;
 
   const urgent = queue.filter((r) => r.priority === "urgent").length;
+  const ready = !!approvals.data && !!mentorRequests.data && !!trackRequests.data;
+  const studentCount = queue.filter((r) => r.source === "mentorChange").length;
+  const mentorSignups = (approvals.data ?? []).filter((a) => a.role === "Mentor").length;
+  const mentorCount = (trackRequests.data?.length ?? 0) + mentorSignups;
+  const two = (n: number) => String(n).padStart(2, "0");
 
   const toggle = (id: string) =>
     setChecked((prev) => {
@@ -332,15 +370,24 @@ export default function AdminApprovals() {
     <AdminSurface>
       <div className="space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-[#dff3f9] px-3 py-1 text-[0.66rem] font-bold uppercase tracking-wider text-[#0a7f99]">
-              <span className="size-1.5 rounded-full bg-[#06b6d4]" />
-              {t("Live Queue Monitor")}
+          <div className="min-w-0 max-w-2xl">
+            <p className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#dff3f9] px-3 py-1 text-[0.66rem] font-bold uppercase tracking-wider text-[#0a7f99]">
+                <span className="size-1.5 rounded-full bg-[#06b6d4]" />
+                {t("Live Queue Monitor")}
+              </span>
+              {ready && (
+                <span className="text-[0.72rem] text-[#14365a]/60">
+                  {t("Updated {time}", {
+                    time: new Date(now).toLocaleTimeString(dateLocale("en-GB"), { hour: "2-digit", minute: "2-digit" }),
+                  })}
+                </span>
+              )}
             </p>
-            <h1 className="mt-2 text-[1.9rem] font-extrabold leading-tight text-[#0d2a45]">
+            <h1 className="mt-2 text-[1.9rem] font-extrabold leading-tight text-[#0d2a45] sm:text-[2.1rem]">
               {t("Pending Requests & Approvals")}
             </h1>
-            <p className="mt-1 max-w-xl text-[0.85rem] text-[#14365a]/70">
+            <p className="mt-1 text-[0.85rem] leading-relaxed text-[#14365a]/75">
               {t(
                 "Review, verify, and resolve administrative requests, squad join applications, mentor allocations, and capstone approvals across active cohorts.",
               )}
@@ -383,40 +430,66 @@ export default function AdminApprovals() {
           </p>
         )}
 
-        <section aria-label={t("Queue statistics")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatTile
+        <ul aria-label={t("Queue statistics")} aria-busy={!ready} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <SquadStat
             label={t("Total Pending")}
-            icon={<ClipboardList className="size-4" />}
-            value={String(queue.length)}
-            badge={`${urgent} ${t("Urgent")}`}
-            badgeClass="bg-[#ffe1e4] text-[#c0263f]"
-            hint={t("Requires immediate triage")}
+            icon={ClipboardList}
+            tone="cyan"
+            value={ready ? two(queue.length) : "—"}
+            suffix={
+              urgent > 0 ? (
+                <span className="rounded-full bg-[#ffe1e4] px-2 py-0.5 text-[#c0263f]">{t("{count} Urgent", { count: urgent })}</span>
+              ) : undefined
+            }
+            hint={
+              urgent > 0 ? (
+                <span className="inline-flex items-center gap-1 font-medium text-[#14365a]">
+                  <AlertCircle className="size-3.5 text-[#c0263f]" /> {t("Requires immediate triage")}
+                </span>
+              ) : (
+                t("Nothing waits longer than {hours}h", { hours: SLA_HOURS })
+              )
+            }
           />
-          <StatTile
+          <SquadStat
             label={t("Student Requests")}
-            icon={<UsersRound className="size-4" />}
-            value={String(counts.squad).padStart(2, "0")}
-            badge={t("in review")}
-            badgeClass="bg-[#e8eef4] text-[#14365a]/70"
-            hint={t("Squad joins & track transfers")}
+            icon={UsersRound}
+            tone="slate"
+            value={ready ? two(studentCount) : "—"}
+            suffix={t("in review")}
+            hint={
+              <span className="inline-flex items-center gap-1">
+                <ArrowLeftRight className="size-3.5 text-[#0a7f99]" /> {t("Mentor change requests")}
+              </span>
+            }
           />
-          <StatTile
+          <SquadStat
             label={t("Mentor Allocations")}
-            icon={<UserCheck className="size-4" />}
-            value={String(counts.session).padStart(2, "0")}
-            badge={t("Slots Open")}
-            badgeClass="bg-[#e3e9ff] text-[#3b3fb0]"
-            hint={t("Coaching session requests")}
+            icon={UserCheck}
+            tone="slate"
+            value={ready ? two(mentorCount) : "—"}
+            suffix={
+              <span className="rounded-full bg-[#e3e9ff] px-2 py-0.5 text-[#3b3fb0]">{t("{count} sign-ups", { count: mentorSignups })}</span>
+            }
+            hint={
+              <span className="inline-flex items-center gap-1">
+                <CalendarCheck className="size-3.5 text-[#0a7f99]" /> {t("Track requests & mentor sign-ups")}
+              </span>
+            }
           />
-          <StatTile
+          <SquadStat
             label={t("Project Sign-offs")}
-            icon={<BadgeCheck className="size-4" />}
-            value={String(counts.milestone).padStart(2, "0")}
-            badge={t("Milestone")}
-            badgeClass="bg-[#e3e9ff] text-[#3b3fb0]"
-            hint={t("Capstone sprint transitions")}
+            icon={BadgeCheck}
+            tone="slate"
+            value={ready ? two(counts.milestone) : "—"}
+            suffix={<span className="rounded-full bg-[#e3e9ff] px-2 py-0.5 text-[#3b3fb0]">{t("Milestone")}</span>}
+            hint={
+              <span className="inline-flex items-center gap-1">
+                <Rocket className="size-3.5 text-[#0a7f99]" /> {t("Capstone sprint transitions")}
+              </span>
+            }
           />
-        </section>
+        </ul>
 
         <ApprovalTabs
           tab={tab}
@@ -431,7 +504,7 @@ export default function AdminApprovals() {
         {mentorRequests.error && <LoadState error={mentorRequests.error} onRetry={mentorRequests.reload} />}
         {trackRequests.error && <LoadState error={trackRequests.error} onRetry={trackRequests.reload} />}
 
-        <div className="grid items-start gap-5 2xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0">
             <ApprovalQueue
               rows={pageRows}
@@ -469,7 +542,7 @@ export default function AdminApprovals() {
               onApprove={approve}
               onDecline={openDecline}
             />
-            <ResolutionVelocity />
+            <ResolutionVelocity created={queue.map((r) => r.createdUtc)} now={now} ready={ready} />
           </div>
         </div>
       </div>

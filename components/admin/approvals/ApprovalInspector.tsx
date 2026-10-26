@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, MessageSquareQuote } from "lucide-react";
+import { CircleCheck, LoaderCircle, MessageSquareQuote } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n/client";
 import type { QueueItem } from "./types";
@@ -30,7 +30,7 @@ export default function ApprovalInspector({ item, busy, locked, onApprove, onDec
     <section className="rounded-2xl bg-white p-5 shadow-sm" aria-labelledby="approval-inspector-title">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 id="approval-inspector-title" className="flex items-center gap-2 text-[0.95rem] font-bold text-[#0d2a45]">
-          <span className="size-2 rounded-full bg-[#06b6d4]" />
+          <span className="size-2 shrink-0 rounded-full bg-[#06b6d4]" />
           {t("Selected Inspector")}
         </h2>
 
@@ -122,20 +122,30 @@ export default function ApprovalInspector({ item, busy, locked, onApprove, onDec
             type="button"
             disabled={locked}
             onClick={() => onApprove(item)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#06b6d4] px-4 py-3 text-[0.82rem] font-semibold text-white hover:bg-[#0597b1] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#06b6d4] px-4 py-3.5 text-[0.85rem] font-semibold text-white shadow-[0_8px_18px_rgba(6,182,212,0.3)] hover:bg-[#0597b1] disabled:opacity-50"
           >
-            {busy && <LoaderCircle className="size-4 animate-spin" />}
+            {busy ? <LoaderCircle className="size-4 animate-spin" /> : <CircleCheck className="size-4" />}
             {t(item.inspector.approveLabel)}
           </button>
 
-          <button
-            type="button"
-            disabled={locked}
-            onClick={() => onDecline(item)}
-            className="w-full rounded-xl bg-[#ffe6e6] px-4 py-2.5 text-[0.78rem] font-semibold text-[#b42a2a] hover:bg-[#ffd8d8] disabled:opacity-50"
-          >
-            {t("Decline Application")}
-          </button>
+          <div className={`grid gap-2 ${item.email ? "grid-cols-2" : ""}`}>
+            {item.email && (
+              <a
+                href={`mailto:${item.email}`}
+                className="grid place-items-center rounded-xl bg-[#e8f0fa] px-3 py-2.5 text-center text-[0.78rem] font-semibold text-[#14365a] hover:bg-[#dce8f6]"
+              >
+                {t("Request Info")}
+              </a>
+            )}
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() => onDecline(item)}
+              className="rounded-xl bg-[#ffe6e6] px-3 py-2.5 text-[0.78rem] font-semibold text-[#b42a2a] hover:bg-[#ffd8d8] disabled:opacity-50"
+            >
+              {t("Decline Application")}
+            </button>
+          </div>
         </div>
       )}
     </section>

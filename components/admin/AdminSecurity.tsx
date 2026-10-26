@@ -1,209 +1,157 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import {
+  BellRing,
+  Download,
+  FileClock,
+  Fingerprint,
+  Laptop,
+  LogIn,
+  MonitorSmartphone,
+  ScrollText,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldHalf,
+  UserCog,
+} from "lucide-react";
+import { getAdmins } from "@/lib/admin-api";
+import { useT } from "@/lib/i18n/client";
+import { tk } from "@/lib/i18n/translate";
+import { AdminSurface, BTN_PRIMARY, BTN_SECONDARY, PageHeader, StatCard, StatGrid } from "./page-parts";
+import { useAdminData } from "./admin-data";
+import { DASH, Empty, Section, Soon, TabBar } from "./reports/ui";
+import { AdminSignIns } from "./security/AdminSignIns";
+import { AccountSecurity, ActiveInspector, EventLog, HardeningStatus, POLICIES } from "./security/SecurityPanels";
 
-import { useI18n } from "@/lib/i18n/client";
-import { AdminBody, AdminHero, AdminPage } from "./page-parts";
-import { AdminDialog, FIELD } from "./AdminPageFrame";
+type Tab = "audit" | "sessions" | "logins" | "policies";
 
-type Session = {
-  id: number;
-  device: string;
-  place: string;
-  minutesAgo: number;
-  current?: boolean;
-};
-
-// Mock data: replace with your API call (e.g. getSessions()).
-const SESSIONS: Session[] = [
-  { id: 1, device: "Chrome on macOS", place: "Alexandria, Egypt", minutesAgo: 0, current: true },
-  { id: 2, device: "Safari on iPhone", place: "Alexandria, Egypt", minutesAgo: 120 },
-];
-
-type TFn = (key: string, vars?: Record<string, string | number>) => string;
-
-function ago(t: TFn, minutes: number) {
-  if (minutes < 60) return t("{count}m ago", { count: minutes });
-  if (minutes < 1440) return t("{count}h ago", { count: Math.floor(minutes / 60) });
-  const days = Math.floor(minutes / 1440);
-
-  return days === 1 ? t("Yesterday") : t("{count}d ago", { count: days });
-}
-
-const glass =
-  "rounded-[1.1em] border border-white/70 bg-white/80 p-[1.2em] shadow-[0_6px_22px_rgba(20,54,90,0.1)] backdrop-blur-[6px]";
-
-function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={`relative h-[1.5em] w-[2.6em] shrink-0 rounded-full transition-colors ${
-        checked ? "bg-[#34c759]" : "bg-[#b8c4d0]"
-      }`}
-    >
-      <span
-        className={`absolute top-[0.2em] size-[1.1em] rounded-full bg-white shadow transition-all ${
-          checked ? "start-[1.4em]" : "start-[0.2em]"
-        }`}
-      />
-    </button>
-  );
-}
+const WEEK = 7 * 24 * 60 * 60 * 1000;
 
 export default function AdminSecurity() {
-  const { t } = useI18n();
+  const t = useT();
+  const [tab, setTab] = useState<Tab>("audit");
+  const [now] = useState(() => Date.now());
+  const admins = useAdminData(getAdmins, tk("We couldn't load the admin accounts. Please try again."));
 
-  const [twoFactor, setTwoFactor] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [current, setCurrent] = useState("");
-  const [next, setNext] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState("");
-  const [changed, setChanged] = useState(false);
-
-  const openDialog = () => {
-    setCurrent("");
-    setNext("");
-    setConfirm("");
-    setError("");
-    setChanged(false);
-    setOpen(true);
-  };
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!current || !next || !confirm) return setError("Please fill in all fields.");
-    if (next.length < 8) return setError("The new password must be at least 8 characters.");
-    if (next !== confirm) return setError("The passwords do not match.");
-
-    // TODO: send { current, next } to the API here
-    setOpen(false);
-    setChanged(true);
-  };
+  const list = admins.data;
+  const recent = list?.filter((a) => a.lastLoginUtc && now - new Date(a.lastLoginUtc).getTime() < WEEK).length ?? 0;
 
   return (
-    <AdminPage>
-      {/* Tall hero: the cards sit on top of its bottom edge */}
-      <AdminHero className="min-h-[calc(var(--u)*22)]">
-        <h1 className="text-[1.9em] font-extrabold leading-none text-[#0f7378] sm:text-[2.2em] xl:text-[2.5em]">
-          {t("Security & Login History")}
-        </h1>
-      </AdminHero>
+    <AdminSurface>
+      <PageHeader
+        eyebrow={t("Shield active")}
+        title={t("Security & Access Monitoring")}
+        description={t("Monitor administrative sessions, audit system actions, review admin sign-ins and security policies across Junior Hub.")}
+        actions={
+          <>
+            <button type="button" disabled title={t("Coming soon")} className={BTN_SECONDARY}>
+              <Download className="size-[1.1em]" /> {t("Export Security Log")}
+            </button>
+            <button type="button" onClick={() => setTab("policies")} className={BTN_PRIMARY}>
+              <ShieldCheck className="size-[1.1em]" /> {t("Security Policies")}
+            </button>
+          </>
+        }
+      />
 
-      <AdminBody className="relative z-10 -mt-[calc(var(--u)*4)]">
-        <div className="mx-auto w-full lg:w-[74%]">
-          <div className="grid items-start gap-[1.2em] lg:grid-cols-2">
-            {/* Two-factor authentication */}
-            <section className={glass}>
-              <h2 className="text-[1.15em] font-semibold text-[#0b1b2b]">{t("Two-Factor Authentication (2FA)")}</h2>
+      <StatGrid>
+        <StatCard label={t("Active Sessions")} value={DASH} icon={MonitorSmartphone} tone="cyan" hint={t("Session tracking coming soon")} />
+        <StatCard label={t("Failed Login Attempts")} value={DASH} icon={ShieldAlert} tone="red" hint={t("Login monitoring coming soon")} />
+        <StatCard label={t("Security Alerts")} value={DASH} icon={BellRing} tone="violet" hint={t("Alerting coming soon")} />
+        <StatCard
+          label={t("Admin Accounts")}
+          value={list ? list.length : DASH}
+          icon={UserCog}
+          tone="green"
+          badge={list ? t("{count} this week", { count: recent }) : undefined}
+          badgeTone="up"
+          hint={t("Signed in during the last 7 days")}
+        />
+      </StatGrid>
 
-              <div className="mt-[0.6em] flex items-center justify-between gap-[1em]">
-                <p className="text-[0.85em] text-[#14365a]">{t("Add an extra layer of security to your account")}</p>
-                <Switch checked={twoFactor} onChange={setTwoFactor} label={t("Two-Factor Authentication (2FA)")} />
+      <TabBar<Tab>
+        label={t("Security sections")}
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { id: "audit", label: t("Audit Trail Ledger"), icon: ScrollText },
+          { id: "sessions", label: t("Active Admin Sessions"), icon: Laptop },
+          { id: "logins", label: t("Login History"), icon: LogIn, count: list?.length },
+          { id: "policies", label: t("Security Policies"), icon: ShieldHalf },
+        ]}
+      />
+
+      <div className="grid items-start gap-[1.4em] xl:grid-cols-[minmax(0,1fr)_22em]">
+        <div className="flex min-w-0 flex-col gap-[1.4em]">
+          {tab === "audit" && <EventLog />}
+
+          {tab === "sessions" && (
+            <Section icon={Laptop} title={t("Active Admin Sessions")} aside={<Soon />}>
+              <Empty
+                icon={Laptop}
+                title={t("Session tracking is not available yet")}
+                text={t("Signed-in devices, locations and idle time will be listed here.")}
+                className="mt-[1em]"
+              />
+            </Section>
+          )}
+
+          {tab === "logins" && (
+            <Section
+              icon={LogIn}
+              title={t("Admin sign-ins")}
+              description={t("Every admin account and when it last signed in.")}
+            >
+              <div className="mt-[1em]">
+                <AdminSignIns admins={list} error={admins.error} onRetry={admins.reload} now={now} />
               </div>
-            </section>
+              <p className="mt-[0.8em] text-[0.7em] text-[#8a97a6]">{t("Geo-IP and device details are coming soon.")}</p>
+            </Section>
+          )}
 
-            {/* Active sessions */}
-            <section className={glass}>
-              <h2 className="text-[1.15em] font-semibold text-[#0b1b2b]">{t("Active Sessions & Devices")}</h2>
-
-              <ul className="mt-[0.6em] divide-y divide-[#14365a]/10">
-                {SESSIONS.map((s) => (
-                  <li key={s.id} className="py-[0.55em] text-[0.85em] text-[#14365a]">
-                    {t(s.device)} — {t(s.place)}{" "}
-                    <span className="text-[#14365a]/70">
-                      ({s.current ? t("Current Session") : ago(t, s.minutesAgo)})
-                    </span>
+          {tab === "policies" && (
+            <Section icon={ShieldHalf} title={t("Security Policies")} description={t("Rules that protect the admin panel.")} aside={<Soon />}>
+              <ul className="mt-[1em] grid gap-[0.8em] md:grid-cols-2">
+                {POLICIES.map((p) => (
+                  <li key={p.title} className="rounded-[0.9em] bg-[#f5f8fe] p-[1em]">
+                    <p.icon className="size-[1.3em] text-[#0b89a6]" />
+                    <p className="mt-[0.5em] text-[0.88em] font-bold text-[#0b1b2b]">{t(p.title)}</p>
+                    <p className="text-[0.72em] text-[#5b6b7c]">{t(p.text)}</p>
+                    <p className="mt-[0.6em] text-[0.72em] font-semibold text-[#8a97a6]">
+                      {t("Status")}: {DASH}
+                    </p>
                   </li>
                 ))}
               </ul>
-            </section>
-          </div>
+            </Section>
+          )}
 
-          {/* Password */}
-          <div className="mx-auto mt-[1.4em] flex max-w-[24em] items-center justify-between gap-[1em] rounded-full border border-white/70 bg-white/85 py-[0.6em] ps-[1.6em] pe-[0.7em] shadow-[0_6px_22px_rgba(20,54,90,0.1)] backdrop-blur-[6px]">
-            <h2 className="text-[1.1em] font-semibold text-[#0b1b2b]">{t("Password & Security")}</h2>
-
+          {/* Ledger integrity banner */}
+          <section className="flex flex-wrap items-center gap-[1em] rounded-[1.1em] bg-[#13233a] p-[1.2em] text-white sm:p-[1.4em]">
+            <span className="grid size-[2.8em] shrink-0 place-items-center rounded-[0.8em] bg-white/10 text-[#5ee0f5]">
+              <Fingerprint className="size-[1.4em]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[1.05em] font-bold text-[#5ee0f5]">{t("Tamper-proof audit ledger")}</p>
+              <p className="text-[0.75em] text-white/70">{t("Hash-verified audit records are coming soon.")}</p>
+            </div>
             <button
               type="button"
-              onClick={openDialog}
-              className="rounded-full bg-[#14365a] px-[1.1em] py-[0.5em] text-[0.75em] font-semibold text-white hover:bg-[#0f2a47]"
+              disabled
+              className="inline-flex items-center gap-[0.5em] rounded-[0.7em] border border-white/20 px-[1.1em] py-[0.6em] text-[0.72em] font-bold uppercase tracking-[0.06em] text-white/80 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {t("Change Password")}
+              <FileClock className="size-[1.1em]" /> {t("Verify ledger")}
             </button>
-          </div>
-
-          {changed && (
-            <p role="status" className="mt-[0.8em] text-center text-[0.8em] font-medium text-[#1a7f55]">
-              {t("Password updated")}
-            </p>
-          )}
+          </section>
         </div>
-      </AdminBody>
 
-      <AdminDialog open={open} title="Change Password" onClose={() => setOpen(false)}>
-        <form onSubmit={submit} className="space-y-3 text-sm">
-          <label className="block">
-            <span className="mb-1 block text-[0.72rem] font-medium">{t("Current password")}</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={current}
-              onChange={(e) => setCurrent(e.target.value)}
-              className={FIELD}
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-[0.72rem] font-medium">{t("New password")}</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-              className={FIELD}
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-[0.72rem] font-medium">{t("Confirm new password")}</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className={FIELD}
-            />
-          </label>
-
-          {error && (
-            <p role="alert" className="text-[0.75rem] font-medium text-[#e0245e]">
-              {t(error)}
-            </p>
-          )}
-
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-lg border border-[#cfe0ee] px-4 py-2 text-[0.75rem] font-semibold hover:bg-[#eef4fa]"
-            >
-              {t("Cancel")}
-            </button>
-            <button
-              type="submit"
-              className="rounded-lg bg-[#1d5bd8] px-4 py-2 text-[0.75rem] font-semibold text-white hover:bg-[#1749ad]"
-            >
-              {t("Change Password")}
-            </button>
-          </div>
-        </form>
-      </AdminDialog>
-    </AdminPage>
+        <aside className="flex min-w-0 flex-col gap-[1.4em]">
+          <ActiveInspector />
+          <HardeningStatus />
+          <AccountSecurity />
+        </aside>
+      </div>
+    </AdminSurface>
   );
 }

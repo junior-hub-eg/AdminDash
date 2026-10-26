@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { IdCard, LoaderCircle, ShieldUser, SlidersHorizontal, UserPlus, Plus } from "lucide-react";
+import { History, IdCard, LoaderCircle, RefreshCcwDot, SlidersHorizontal, UserPlus, Plus } from "lucide-react";
 import { errorMessage } from "@/lib/api-client";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
@@ -15,7 +15,8 @@ import {
   type RolePermission,
   type SystemReport,
 } from "@/lib/admin-api";
-import { BTN_PRIMARY, BTN_SECONDARY, AdminSurface, PageHeader, StatCard, StatGrid } from "./page-parts";
+import { BTN_PRIMARY, BTN_SECONDARY, AdminSurface, StatCard, StatGrid } from "./page-parts";
+import { ScreenHeader } from "./notifications/ScreenHeader";
 import { LoadState, useAdminData } from "./admin-data";
 import { AdminDialog, FIELD } from "./AdminPageFrame";
 import { RoleTabs } from "./roles/RoleTabs";
@@ -46,7 +47,6 @@ export default function RolesPage() {
       active = false;
     };
   }, []);
-  const adminCount = report?.users.byRole.find((x) => x.key === "Admin")?.count ?? 0;
 
   async function remove(role: AdminRole) {
     if (!window.confirm(t("Delete the role \"{name}\"?", { name: role.name }))) return;
@@ -62,10 +62,9 @@ export default function RolesPage() {
     }
   }
 
-  /** Every click on View / Edit / Delete is saved at once (same as before). */
-  async function toggle(area: string, right: Right) {
+  /** Every click on View / Edit / Delete is saved at once. */
+  async function save(permissions: RolePermission[]) {
     if (!selected || saving) return;
-    const permissions: RolePermission[] = selected.permissions.map((p) => (p.area === area ? { ...p, [right]: !p[right] } : p));
     const before = roles;
     setData(roles.map((r) => (r.id === selected.id ? { ...r, permissions } : r)));
     setSaving(true);
@@ -81,24 +80,65 @@ export default function RolesPage() {
     }
   }
 
+  const toggle = (area: string, right: Right) =>
+    selected && save(selected.permissions.map((p) => (p.area === area ? { ...p, [right]: !p[right] } : p)));
+
+  /** View on for every module, or off for all when every module already has it. */
+  const toggleRead = () => {
+    if (!selected) return;
+    const allOn = selected.permissions.every((p) => p.canView);
+    void save(selected.permissions.map((p) => (allOn ? { ...p, canView: false, canEdit: false, canDelete: false } : { ...p, canView: true })));
+  };
+
   return (
     <AdminSurface>
-      <PageHeader
-        eyebrow={t("Admin / Console / Roles & Permissions")}
+      <ScreenHeader
+        crumbs={[t("Admin"), t("Console"), t("Roles & Permissions")]}
         title={t("Roles & Permissions")}
         description={t("Configure granular access controls, administrative privileges, and security matrix across platform roles.")}
         actions={
           <>
-            <button type="button" onClick={() => setCreating(true)} className={BTN_PRIMARY}><Plus className="size-[1em]" /> {t("Create Custom Role")}</button>
+            <button
+              type="button"
+              disabled
+              title={t("Coming soon")}
+              className="inline-flex cursor-not-allowed items-center gap-[0.5em] rounded-[0.7em] bg-white px-[1.1em] py-[0.65em] text-[0.85em] font-semibold text-[#0b1b2b]/70 shadow-[0_4px_14px_rgba(20,54,90,0.08)]"
+            >
+              <History className="size-[1em]" /> {t("Security Audit Log")}
+            </button>
+            <button type="button" onClick={() => setCreating(true)} className={BTN_PRIMARY}>
+              <Plus className="size-[1em]" /> {t("Create Custom Role")}
+            </button>
           </>
         }
       />
 
       <StatGrid busy={!data}>
-        <StatCard label={t("Total Roles")} icon={IdCard} value={data ? String(roles.length).padStart(2, "0") : "—"} badge={data ? `${roles.length - custom} ${t("System")}` : undefined} badgeTone="neutral" hint={data ? `${custom} ${t("Custom configurations")}` : undefined} />
-        <StatCard label={t("Active Users Assigned")} icon={UserPlus} tone="violet" value={report ? report.users.total.toLocaleString() : "—"} hint={t("Accounts on the platform")} />
-        <StatCard label={t("Custom Roles")} icon={SlidersHorizontal} tone="green" value={data ? String(custom).padStart(2, "0") : "—"} badge={t("Tailored")} badgeTone="neutral" hint={t("Specific access scopes")} />
-        <StatCard label={t("Admins")} icon={ShieldUser} tone="amber" value={report ? String(adminCount).padStart(2, "0") : "—"} hint={t("Admin accounts")} />
+        <StatCard
+          label={t("Total Roles")}
+          icon={IdCard}
+          value={data ? String(roles.length).padStart(2, "0") : "—"}
+          badge={data ? `${roles.length - custom} ${t("System")}` : undefined}
+          badgeTone="neutral"
+          hint={data ? `${custom} ${t("Custom configurations")}` : undefined}
+        />
+        <StatCard
+          label={t("Active Users Assigned")}
+          icon={UserPlus}
+          value={report ? report.users.total.toLocaleString("en") : "—"}
+          badge={report ? t("{n} active", { n: report.users.activeLast7Days.toLocaleString("en") }) : undefined}
+          badgeTone="neutral"
+          hint={t("Accounts on the platform")}
+        />
+        <StatCard
+          label={t("Custom Roles")}
+          icon={SlidersHorizontal}
+          value={data ? String(custom).padStart(2, "0") : "—"}
+          badge={t("Tailored")}
+          badgeTone="neutral"
+          hint={t("Specific access scopes")}
+        />
+        <StatCard label={t("Permission Changes")} icon={RefreshCcwDot} value="—" hint={t("Not recorded yet")} />
       </StatGrid>
 
       {!data ? (
@@ -107,8 +147,8 @@ export default function RolesPage() {
         selected && (
           <>
             <RoleTabs roles={roles} selectedId={selected.id} onSelect={setSelectedId} onDelete={remove} deletingId={deletingId} />
-            <PermissionsMatrix role={selected} saving={saving} error={saveError} onToggle={toggle} onDiscard={reload} />
-            <div className="grid items-start gap-[1.2em] lg:grid-cols-2">
+            <PermissionsMatrix role={selected} saving={saving} error={saveError} onToggle={toggle} onToggleRead={toggleRead} onDiscard={reload} />
+            <div className="grid items-stretch gap-[1.2em] lg:grid-cols-2">
               <AssignedAdministrators />
               <PermissionAuditEvents />
             </div>

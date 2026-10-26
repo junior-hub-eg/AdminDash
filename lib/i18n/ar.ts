@@ -1,6 +1,11 @@
 import { account } from "./ar/account";
 import { admin } from "./ar/admin";
 import { adminManage } from "./ar/admin-manage";
+import { adminUiA } from "./ar/admin-ui-a";
+import { adminUiB } from "./ar/admin-ui-b";
+import { adminUiC } from "./ar/admin-ui-c";
+import { adminUiD } from "./ar/admin-ui-d";
+import { adminUiE } from "./ar/admin-ui-e";
 import { auth } from "./ar/auth";
 import { backend } from "./ar/backend";
 import { calendar } from "./ar/calendar";
@@ -51,6 +56,11 @@ export const ar: Record<string, string> = {
   ...calendar,
   ...admin,
   ...adminManage,
+  ...adminUiA,
+  ...adminUiB,
+  ...adminUiC,
+  ...adminUiD,
+  ...adminUiE,
   ...teacher,
   ...students,
   ...curriculum,
