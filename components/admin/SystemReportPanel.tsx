@@ -1,11 +1,10 @@
 "use client";
 
-import { Database, Download, Printer } from "lucide-react";
+import { Database, Download } from "lucide-react";
 import type { CountItem, SystemReport } from "@/lib/admin-api";
-import { useT } from "@/lib/i18n/client";
-import { dateLocale, tk, type TFunction } from "@/lib/i18n/translate";
-import { LoadState } from "./admin-data";
-import { BTN_PRIMARY, BTN_SECONDARY, PANEL } from "./page-parts";
+import { useI18n } from "@/lib/i18n/client";
+import { tk, type TFunction } from "@/lib/i18n/translate";
+import { BTN_SECONDARY, fmtNumber, ReportCard, StateBlock } from "@/components/report-kit";
 import { downloadCsv } from "./reports/ui";
 
 type Row = [label: string, value: number | string];
@@ -142,7 +141,7 @@ export function exportSystemCsv(r: SystemReport, t: TFunction) {
   downloadCsv(`junior-hub-system-report-${r.generatedUtc.slice(0, 10)}.csv`, [[t("Section"), t("Item"), t("Value")], ...systemCsvRows(r, t)]);
 }
 
-/** Review notes: "ريبورت فيها كل تفاصيل السستم". GET admin/reports/system, with CSV export and print (save as PDF). */
+/** Review notes: "ريبورت فيها كل تفاصيل السستم". GET admin/reports/system, every number grouped, with a CSV download. */
 export function SystemReportPanel({
   report: r,
   error,
@@ -154,75 +153,52 @@ export function SystemReportPanel({
   onRetry: () => void;
   className?: string;
 }) {
-  const t = useT();
+  const { t, intl } = useI18n();
+  const generated = r
+    ? new Date(r.generatedUtc).toLocaleString(intl, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : null;
 
   return (
-    <section id="system-report" className={`${PANEL} min-w-0 scroll-mt-[2em] p-[1.2em] sm:p-[1.4em] ${className}`}>
-      <header className="flex flex-wrap items-end justify-between gap-[0.8em]">
-        <div className="flex min-w-0 items-start gap-[0.7em]">
-          <span className="grid size-[2.3em] shrink-0 place-items-center rounded-[0.7em] bg-[#e0f6fc] text-[#0b89a6]">
-            <Database className="size-[1.15em]" />
-          </span>
-          <div className="min-w-0">
-          <h2 className="text-[1.15em] font-bold text-[#0b1b2b]">{t("Full System Report")}</h2>
-          <p className="text-[0.78em] text-[#5b6b7c]">
-            {r
-              ? t("Every part of the system in numbers · generated {date}", {
-                  date: new Date(r.generatedUtc).toLocaleString(dateLocale("en-GB"), {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                })
-              : t("Every part of the system in numbers")}
-          </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-[0.5em] print:hidden">
-          <button
-            type="button"
-            disabled={!r}
-            onClick={() => window.print()}
-            className={BTN_SECONDARY}
-          >
-            <Printer className="size-[1em]" /> {t("Print / PDF")}
-          </button>
-          <button
-            type="button"
-            disabled={!r}
-            onClick={() => r && exportSystemCsv(r, t)}
-            className={BTN_PRIMARY}
-          >
-            <Download className="size-[1em]" /> {t("Export Full Report")}
-          </button>
-        </div>
-      </header>
-
+    <ReportCard
+      id="system-report"
+      icon={Database}
+      title={t("Full System Report")}
+      description={generated ? t("Every part of the system in numbers · generated {date}", { date: generated }) : t("Every part of the system in numbers")}
+      aside={
+        <button type="button" disabled={!r} onClick={() => r && exportSystemCsv(r, t)} className={`${BTN_SECONDARY} print:hidden`}>
+          <Download className="size-[1em]" /> {t("Download CSV")}
+        </button>
+      }
+      className={className}
+    >
       {!r ? (
-        <LoadState error={error} onRetry={onRetry} />
+        <StateBlock error={error} onRetry={onRetry} />
       ) : (
-        <div className="mt-[1em] grid gap-[1em] md:grid-cols-2 2xl:grid-cols-4">
+        <div className="mt-[1em] grid gap-[1em] md:grid-cols-2 2xl:grid-cols-4 print:grid-cols-2">
           {systemGroups(r).map((g) => (
-            <article key={g.title} className="break-inside-avoid rounded-[0.9em] bg-[#f5f8fe] p-[1em]">
-              <h3 className="text-[0.95em] font-bold text-[#14365a]">{t(g.title)}</h3>
-              <dl className="mt-[0.5em] grid gap-[0.3em] text-[0.78em]">
+            <article key={g.title} className="break-inside-avoid rounded-[0.9em] border border-[#eef2f7] bg-[#f8fbfe] p-[1em]">
+              <h3 className="flex items-center gap-[0.5em] text-[0.92em] font-bold text-[#14365a]">
+                <span className="h-[1em] w-[0.25em] rounded-full bg-[#06b6d4]" />
+                {t(g.title)}
+              </h3>
+              <dl className="mt-[0.5em] divide-y divide-[#eef2f7] text-[0.76em]">
                 {g.rows.map(([label, value]) => (
-                  <div key={label} className="flex justify-between gap-[0.8em]">
+                  <div key={label} className="flex justify-between gap-[0.8em] py-[0.25em]">
                     <dt className="text-[#5b6b7c]">{t(label)}</dt>
-                    <dd className="font-bold text-[#0b1b2b]">{typeof value === "number" ? value.toLocaleString("en") : value}</dd>
+                    <dd dir="ltr" className="font-bold text-[#0b1b2b]">
+                      {typeof value === "number" ? fmtNumber(value) : value}
+                    </dd>
                   </div>
                 ))}
               </dl>
               {g.lists.map(([label, items]) =>
                 items.length === 0 ? null : (
                   <div key={label} className="mt-[0.7em]">
-                    <p className="text-[0.7em] font-bold uppercase tracking-wide text-[#8a97a6]">{t(label)}</p>
-                    <ul className="mt-[0.3em] flex flex-wrap gap-[0.3em] text-[0.72em]">
+                    <p className="text-[0.68em] font-bold uppercase tracking-wide text-[#8a97a6]">{t(label)}</p>
+                    <ul className="mt-[0.3em] flex flex-wrap gap-[0.3em] text-[0.7em]">
                       {items.map((i) => (
-                        <li key={i.key} className="rounded-full bg-white px-[0.7em] py-[0.15em] text-[#14365a]">
-                          {t(i.key)}: <b>{i.count}</b>
+                        <li key={i.key} className="rounded-full bg-white px-[0.7em] py-[0.15em] text-[#14365a] shadow-[0_1px_3px_rgba(20,54,90,0.06)]">
+                          {t(i.key)}: <b>{fmtNumber(i.count)}</b>
                         </li>
                       ))}
                     </ul>
@@ -233,6 +209,6 @@ export function SystemReportPanel({
           ))}
         </div>
       )}
-    </section>
+    </ReportCard>
   );
 }

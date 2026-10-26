@@ -1,60 +1,60 @@
 "use client";
 
-import { Activity, BadgeCheck, ClipboardCheck, Users } from "lucide-react";
-import type { AdminReport, SystemReport } from "@/lib/admin-api";
+import { Activity, BadgeCheck, CalendarCheck, ClipboardCheck, FileCheck2, GraduationCap, ListChecks, Sparkles, UserPlus, Users, type LucideIcon } from "lucide-react";
+import type { AdminReport } from "@/lib/admin-api";
+import type { ReportTrends, TrendKey } from "@/lib/admin-reports-api";
 import { useT } from "@/lib/i18n/client";
-import { StatCard, StatGrid } from "./page-parts";
-import { DASH, fmt } from "./reports/ui";
+import { tk } from "@/lib/i18n/translate";
+import { KpiCard, KpiGrid, StateBlock } from "@/components/report-kit";
 
-/** The KPI strip of Analytics & Reports: all four numbers come from the API. */
-export function ReportStats({ stats, system }: { stats: AdminReport["stats"] | null; system: SystemReport | null }) {
+/** The trend metrics, in the order the KPI row and the chart legend show them. */
+export const TREND_METRICS: { key: TrendKey; label: string; icon: LucideIcon }[] = [
+  { key: "activeStudents", label: tk("Active students"), icon: Users },
+  { key: "newStudents", label: tk("New students"), icon: UserPlus },
+  { key: "lessonsPassed", label: tk("Lessons passed"), icon: GraduationCap },
+  { key: "tasksDone", label: tk("Squad tasks done"), icon: ListChecks },
+  { key: "submissions", label: tk("Assignment submissions"), icon: FileCheck2 },
+  { key: "sessionsCompleted", label: tk("Mentor sessions completed"), icon: CalendarCheck },
+  { key: "xpAwarded", label: tk("XP awarded"), icon: Sparkles },
+];
+
+/** KPI row: the selected range against the same length of time before it (reports/trends). */
+export function TrendKpis({ trends, error, onRetry }: { trends: ReportTrends | null; error: string | null; onRetry: () => void }) {
   const t = useT();
-  const s = system?.students;
-  const activeShare = s && s.total ? Math.round((s.activeLast30Days / s.total) * 100) : null;
-
+  if (error && !trends) return <StateBlock error={error} onRetry={onRetry} />;
   return (
-    <StatGrid busy={!stats || !system}>
-      <StatCard
-        label={t("Active Students")}
-        value={s ? fmt(s.activeLast30Days) : DASH}
-        icon={Users}
-        tone="cyan"
-        badge={activeShare != null ? `${activeShare}%` : undefined}
-        badgeTone="neutral"
-        hint={s ? t("of {total} students active in the last 30 days", { total: fmt(s.total) }) : undefined}
-      />
-      <StatCard
-        label={t("Course Completion Rate")}
-        value={stats ? `${stats.completionRate}%` : DASH}
-        icon={ClipboardCheck}
-        tone="green"
-        hint={t("For the selected period")}
-      />
-      <StatCard
-        label={t("Average Student Score")}
-        value={
-          stats ? (
-            <span dir="ltr">
-              {stats.averageScore}
-              <span className="text-[0.5em] font-semibold text-[#8a97a6]"> / 100</span>
-            </span>
-          ) : (
-            DASH
-          )
-        }
-        icon={BadgeCheck}
-        tone="violet"
-        badge={stats ? t("{count} certificates", { count: fmt(stats.certificatesIssued) }) : undefined}
-        badgeTone="neutral"
-        hint={t("For the selected period")}
-      />
-      <StatCard
-        label={t("Active Engagement")}
-        value={stats ? `${stats.activeEngagement}%` : DASH}
-        icon={Activity}
-        tone="amber"
-        hint={t("For the selected period")}
-      />
-    </StatGrid>
+    <KpiGrid busy={!trends}>
+      {TREND_METRICS.map((m) => (
+        <KpiCard
+          key={m.key}
+          label={t(m.label)}
+          icon={m.icon}
+          value={trends ? (trends.current[m.key] ?? 0) : null}
+          previous={trends ? (trends.previous[m.key] ?? 0) : null}
+        />
+      ))}
+    </KpiGrid>
+  );
+}
+
+const PERIOD_LABEL: Record<AdminReport["period"], string> = {
+  Week: tk("Last 7 days"),
+  Month: tk("Last 30 days"),
+  Year: tk("Last 12 months"),
+};
+
+/** Learning quality for the closest standard period (reports?period=), with no comparison. */
+export function QualityKpis({ report, error, onRetry }: { report: AdminReport | null; error: string | null; onRetry: () => void }) {
+  const t = useT();
+  const s = report?.stats;
+  const hint = report ? t("Learning quality · {period}", { period: t(PERIOD_LABEL[report.period]) }) : undefined;
+  if (error && !report) return <StateBlock error={error} onRetry={onRetry} />;
+  return (
+    <KpiGrid busy={!report}>
+      <KpiCard label={t("Course Completion Rate")} icon={ClipboardCheck} value={s ? s.completionRate : null} format={(n) => `${n}%`} hint={hint} />
+      <KpiCard label={t("Average Student Score")} icon={BadgeCheck} value={s ? s.averageScore : null} format={(n) => `${n} / 100`} hint={hint} />
+      <KpiCard label={t("Active Engagement")} icon={Activity} value={s ? s.activeEngagement : null} format={(n) => `${n}%`} hint={hint} />
+      <KpiCard label={t("Certificates issued")} icon={BadgeCheck} value={s ? s.certificatesIssued : null} hint={hint} />
+    </KpiGrid>
   );
 }
