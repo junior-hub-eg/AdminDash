@@ -129,7 +129,9 @@ export interface NewMentor {
   photoUrl?: string;
 }
 
-export const getAdminOverview = () => api.get<AdminOverview>("/api/v1/admin/overview");
+/** The dashboard for the last 7, 14, 30 or 90 days: daily activity, and active students against the period before. */
+export const getAdminOverview = (days: DashboardPeriod = 7) => api.get<AdminOverview>(`/api/v1/admin/overview?days=${days}`);
+export type DashboardPeriod = 7 | 14 | 30 | 90;
 export const getAdminStudents = () => api.get<AdminStudent[]>("/api/v1/admin/students");
 /** Adds an independent student whose account is active right away (the admin sets the first password). */
 export const addStudent = (body: { fullName: string; email: string; password: string; gender: "Male" | "Female"; phone?: string }) =>
@@ -417,6 +419,23 @@ export interface AdminTrackRequest {
   note: string | null;
   createdUtc: string;
 }
+
+/** A student who learns a track asked to change to another one; the admin decides (26 Oct 2026). */
+export interface AdminTrackChangeRequest {
+  id: string;
+  student: AdminPerson;
+  /** The track in focus when they asked. */
+  currentTrack: { code: string; name: string } | null;
+  requestedTrack: { code: string; name: string };
+  /** From the placement test, when the request came from it. */
+  level: string | null;
+  createdUtc: string;
+}
+
+export const getTrackChangeRequests = () => api.get<AdminTrackChangeRequest[]>("/api/v1/admin/track-change-requests");
+export const approveTrackChangeRequest = (id: string) => api.post<void>(`/api/v1/admin/track-change-requests/${id}/approve`);
+export const rejectTrackChangeRequest = (id: string, reason?: string) =>
+  api.post<void>(`/api/v1/admin/track-change-requests/${id}/reject`, { reason: reason || null });
 
 export const getMentorRequests = () => api.get<AdminMentorRequest[]>("/api/v1/admin/mentor-requests");
 export const approveMentorRequest = (id: string) => api.post<void>(`/api/v1/admin/mentor-requests/${id}/approve`);

@@ -18,16 +18,20 @@ import {
 import {
   APPROVALS_CHANGED,
   approveMentorRequest,
+  approveTrackChangeRequest,
   approveSignup,
   approveTrackRequest,
   getApprovals,
   getMentorRequests,
+  getTrackChangeRequests,
   getTrackRequests,
   rejectMentorRequest,
+  rejectTrackChangeRequest,
   rejectSignup,
   rejectTrackRequest,
   type AdminApproval,
   type AdminMentorRequest,
+  type AdminTrackChangeRequest,
   type AdminTrackRequest,
 } from "@/lib/admin-api";
 import { errorMessage } from "@/lib/api-client";
@@ -148,6 +152,38 @@ function mentorChangeToItem(r: AdminMentorRequest, t: T, now: number): QueueItem
   };
 }
 
+/** A student who learns a track asked to change to another one: approving starts it and puts it in focus. */
+function trackChangeToItem(r: AdminTrackChangeRequest, t: T, now: number): QueueItem {
+  const { slaProgress, ...time } = timing(r.createdUtc, now, t);
+  const from = r.currentTrack ? t(r.currentTrack.name) : "—";
+  const to = t(r.requestedTrack.name);
+
+  return {
+    id: r.id,
+    source: "trackChange",
+    ...time,
+    kind: "session",
+    name: r.student.fullName,
+    subtitle: t("Student • {track}", { track: from }),
+    note: t("Wants to change their track to {track}", { track: to }),
+    typeLabel: t("Track Change"),
+    context: to,
+    primaryLabel: t("Approve"),
+    inspector: {
+      ticket: `#TC-${r.id.replace(/-/g, "").slice(0, 4).toUpperCase()}`,
+      idLabel: r.student.fullName,
+      chips: [t("Track Change"), to],
+      cards: [
+        { label: "Current track", value: from },
+        { label: "Requested track", value: to, accent: true },
+        ...(r.level ? [{ label: "Level", value: t(r.level) }] : []),
+      ],
+      progress: slaProgress,
+      approveLabel: t("Approve & Notify"),
+    },
+  };
+}
+
 /** A mentor asked to teach another track too: approving lists, matches and books them in it. */
 function trackRequestToItem(r: AdminTrackRequest, t: T, now: number): QueueItem {
   const { slaProgress, ...time } = timing(r.createdUtc, now, t);
@@ -188,6 +224,7 @@ export default function AdminApprovals() {
   const approvals = useAdminData(getApprovals, tk("We couldn't load the sign-ups. Please try again."));
   const mentorRequests = useAdminData(getMentorRequests, tk("We couldn't load the requests. Please try again."));
   const trackRequests = useAdminData(getTrackRequests, tk("We couldn't load the requests. Please try again."));
+  const trackChanges = useAdminData(getTrackChangeRequests, tk("We couldn't load the requests. Please try again."));
   const [starter, setStarter] = useState<QueueItem["mentor"] | null>(null);
 
   const [tab, setTab] = useState<ApprovalTab>("all");
@@ -204,8 +241,8 @@ export default function AdminApprovals() {
 
   // The time the lists arrived: ages, priorities and "Updated" are read against it.
   const now = useMemo(
-    () => stamp([approvals.data, mentorRequests.data, trackRequests.data]),
-    [approvals.data, mentorRequests.data, trackRequests.data],
+    () => stamp([approvals.data, mentorRequests.data, trackRequests.data, trackChanges.data]),
+    [approvals.data, mentorRequests.data, trackRequests.data, trackChanges.data],
   );
 
   const queue = useMemo(() => {
@@ -213,11 +250,12 @@ export default function AdminApprovals() {
       ...(approvals.data ?? []).map((a) => signupToItem(a, t, now)),
       ...(mentorRequests.data ?? []).map((r) => mentorChangeToItem(r, t, now)),
       ...(trackRequests.data ?? []).map((r) => trackRequestToItem(r, t, now)),
+      ...(trackChanges.data ?? []).map((r) => trackChangeToItem(r, t, now)),
     ];
 
     // Most urgent first, then the oldest.
     return rows.sort((a, b) => RANK[a.priority] - RANK[b.priority] || a.createdUtc.localeCompare(b.createdUtc));
-  }, [approvals.data, mentorRequests.data, trackRequests.data, t, now]);
+  }, [approvals.data, mentorRequests.data, trackRequests.data, trackChanges.data, t, now]);
 
   // Everything except the tab: the tab counts are computed on this.
   const base = useMemo(() => (priority === "all" ? queue : queue.filter((r) => r.priority === priority)), [queue, priority]);
@@ -244,8 +282,8 @@ export default function AdminApprovals() {
   const selectedCount = queue.filter((r) => checked.has(r.id)).length;
 
   const urgent = queue.filter((r) => r.priority === "urgent").length;
-  const ready = !!approvals.data && !!mentorRequests.data && !!trackRequests.data;
-  const studentCount = queue.filter((r) => r.source === "mentorChange").length;
+  const ready = !!approvals.data && !!mentorRequests.data && !!trackRequests.data && !!trackChanges.data;
+  const studentCount = queue.filter((r) => r.source === "mentorChange" || r.source === "trackChange").length;
   const mentorSignups = (approvals.data ?? []).filter((a) => a.role === "Mentor").length;
   const mentorCount = (trackRequests.data?.length ?? 0) + mentorSignups;
   const two = (n: number) => String(n).padStart(2, "0");
@@ -277,6 +315,7 @@ export default function AdminApprovals() {
     if (item.source === "signup") approvals.setData((list) => list?.filter((a) => a.id !== item.id) ?? null);
     if (item.source === "mentorChange") mentorRequests.setData((list) => list?.filter((a) => a.id !== item.id) ?? null);
     if (item.source === "trackRequest") trackRequests.setData((list) => list?.filter((a) => a.id !== item.id) ?? null);
+    if (item.source === "trackChange") trackChanges.setData((list) => list?.filter((a) => a.id !== item.id) ?? null);
     window.dispatchEvent(new Event(APPROVALS_CHANGED)); // the sidebar count
   }
 
@@ -289,6 +328,7 @@ export default function AdminApprovals() {
     try {
       if (item.source === "signup") await approveSignup(item.id);
       else if (item.source === "mentorChange") await approveMentorRequest(item.id);
+      else if (item.source === "trackChange") await approveTrackChangeRequest(item.id);
       else await approveTrackRequest(item.id);
       drop(item);
 
@@ -354,6 +394,7 @@ export default function AdminApprovals() {
     try {
       if (item.source === "signup") await rejectSignup(item.id, reason.trim());
       else if (item.source === "mentorChange") await rejectMentorRequest(item.id, reason.trim());
+      else if (item.source === "trackChange") await rejectTrackChangeRequest(item.id, reason.trim());
       else await rejectTrackRequest(item.id, reason.trim());
       drop(item);
 
@@ -503,6 +544,7 @@ export default function AdminApprovals() {
         {!approvals.data && <LoadState error={approvals.error} onRetry={approvals.reload} />}
         {mentorRequests.error && <LoadState error={mentorRequests.error} onRetry={mentorRequests.reload} />}
         {trackRequests.error && <LoadState error={trackRequests.error} onRetry={trackRequests.reload} />}
+        {trackChanges.error && <LoadState error={trackChanges.error} onRetry={trackChanges.reload} />}
 
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0">
@@ -527,6 +569,7 @@ export default function AdminApprovals() {
                 approvals.reload();
                 mentorRequests.reload();
                 trackRequests.reload();
+                trackChanges.reload();
               }}
               busyId={busyId}
               onApprove={approve}

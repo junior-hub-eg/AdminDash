@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Shuffle,
   ArrowLeftRight,
   ChevronLeft,
   ChevronRight,
@@ -20,6 +21,7 @@ const SOURCE_ICON: Record<RequestSource, LucideIcon> = {
   signup: UserRoundPlus,
   mentorChange: ArrowLeftRight,
   trackRequest: GitBranch,
+  trackChange: Shuffle,
 };
 
 type Props = {

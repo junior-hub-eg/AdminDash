@@ -74,4 +74,10 @@ export const adminStudents: Record<string, string> = {
   "Capstone Project: {x}": "مشروع التخرج: {x}",
   "{x} Capstone Project": "مشروع تخرج {x}",
   "{x} Track Completion": "إتمام مسار {x}",
+  // Dashboard period
+  "Last 14 Days": "آخر 14 يومًا",
+  "Last 90 Days": "آخر 90 يومًا",
+  "in the last {days} days": "في آخر {days} يوم",
+  "active vs the {days} days before": "النشطون مقارنة بالـ {days} يوم السابقة",
+  "Daily lessons passed vs squad tasks done over the last {days} days": "الدروس المجتازة يوميًا مقابل مهام الفرق المنجزة خلال آخر {days} يوم",
 };
