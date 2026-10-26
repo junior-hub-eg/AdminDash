@@ -2,6 +2,9 @@ import { account } from "./ar/account";
 import { admin } from "./ar/admin";
 import { adminManage } from "./ar/admin-manage";
 import { adminStudents } from "./ar/admin-students";
+import { adminMentorSessions } from "./ar/admin-mentor-sessions";
+import { adminRewards } from "./ar/admin-rewards";
+import { adminSecurity } from "./ar/admin-security";
 import { adminUiA } from "./ar/admin-ui-a";
 import { adminUiB } from "./ar/admin-ui-b";
 import { adminUiC } from "./ar/admin-ui-c";
@@ -32,6 +35,7 @@ import { teacherCalendar } from "./ar/teacher-calendar";
 import { teacherProgress } from "./ar/teacher-progress";
 import { grammarCoach } from "./ar/grammar-coach";
 import { adminGrammar } from "./ar/admin-grammar";
+import { adminCertificates } from "./ar/admin-certificates";
 import { teacherGrammar } from "./ar/teacher-grammar";
 import { mentorArea } from "./ar/mentor-area";
 
@@ -58,6 +62,9 @@ export const ar: Record<string, string> = {
   ...admin,
   ...adminManage,
   ...adminStudents,
+  ...adminMentorSessions,
+  ...adminRewards,
+  ...adminSecurity,
   ...adminUiA,
   ...adminUiB,
   ...adminUiC,
@@ -73,5 +80,6 @@ export const ar: Record<string, string> = {
   ...teacherProgress,
   ...grammarCoach,
   ...adminGrammar,
+  ...adminCertificates,
   ...teacherGrammar,
 };

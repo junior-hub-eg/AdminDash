@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { BadgeCheck, CalendarX2, Download, Gauge, UserPlus, UserX, Video } from "lucide-react";
+import { BadgeCheck, Download, Gauge, UserPlus, UserX } from "lucide-react";
 import { getAdminMentors, getApprovals, type AdminMentor, type AdminMentorsPage } from "@/lib/admin-api";
 import { useI18n } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
@@ -12,6 +12,7 @@ import { LoadState, useAdminData } from "./admin-data";
 import { MentorStats } from "./MentorStats";
 import { MentorsTable } from "./MentorsTable";
 import { UnassignedStudents } from "./UnassignedStudents";
+import { UpcomingSessions } from "./mentors/UpcomingSessions";
 
 const card = "rounded-[1.1em] bg-white p-[1.2em] shadow-[0_6px_22px_rgba(20,54,90,0.07)]";
 
@@ -215,23 +216,7 @@ export default function AdminMentors() {
               )}
             </article>
 
-            {/* Upcoming sessions: the API only gives a count, no session list yet. */}
-            <article className={card}>
-              <header className="flex items-start justify-between gap-[0.6em]">
-                <h2 className="inline-flex items-center gap-[0.5em] text-[1.05em] font-bold text-[#0b1b2b]">
-                  <Video className="size-[1.05em] text-[#0b6f86]" /> {t("Upcoming Sessions")}
-                </h2>
-                <span className="text-[0.72em] font-semibold text-[#0b6f86]">
-                  {stats ? t("{count} scheduled", { count: stats.upcomingSessions }) : "—"}
-                </span>
-              </header>
-              <div className="mt-[0.9em] grid place-items-center gap-[0.4em] rounded-[0.8em] bg-[#f4f8fd] px-[1em] py-[1.6em] text-center">
-                <CalendarX2 className="size-[1.6em] text-[#8a97a6]" />
-                <p className="text-[0.8em] font-semibold text-[#14365a]">
-                  {stats && stats.upcomingSessions > 0 ? t("Session details aren't available yet") : t("No upcoming sessions")}
-                </p>
-              </div>
-            </article>
+            <UpcomingSessions />
 
             {/* Recruitment pipeline */}
             <article className="rounded-[1.1em] bg-gradient-to-br from-[#0b1b2b] to-[#16314f] p-[1.3em] text-white shadow-[0_6px_22px_rgba(20,54,90,0.18)] md:col-span-2 xl:col-span-1">

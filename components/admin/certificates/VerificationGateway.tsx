@@ -13,7 +13,10 @@ type Result = { kind: "valid"; cert: VerifiedCertificate } | { kind: "missing" }
 
 const normalize = (v: string) => v.replace(/[#\s]/g, "").toUpperCase();
 
-/** Checks a certificate code against the public verify endpoint (GET recruitment/certificates/{code}). */
+/**
+ * Checks a credential id against the public verify endpoint (GET recruitment/certificates/{code}): a simulation
+ * certificate (JH-SIM-...) or a track / capstone certificate (JH-CRT-...); a revoked one shows as revoked.
+ */
 export default function VerificationGateway() {
   const { t } = useI18n();
 
@@ -63,7 +66,7 @@ export default function VerificationGateway() {
               setValue(e.target.value);
               setResult(null);
             }}
-            placeholder="#JH-SIM-4F7K2Q"
+            placeholder="#JH-CRT-4F7K2Q"
             className="h-[2.9em] w-full rounded-[0.6em] bg-[#eef3fb] pe-[2.6em] ps-[0.9em] text-[0.8em] text-[#0b1b2b] outline-none placeholder:text-[#8a97a6] focus:ring-2 focus:ring-[#06b6d4]/40"
           />
           <ScanLine className="pointer-events-none absolute end-[0.8em] top-1/2 size-[1.05em] -translate-y-1/2 text-[#5b6b7c]" aria-hidden />
@@ -79,7 +82,28 @@ export default function VerificationGateway() {
       </form>
 
       <div role="status" aria-live="polite">
-        {result?.kind === "valid" && (
+        {result?.kind === "valid" && result.cert.status === "Revoked" && (
+          <div className="mt-[0.9em] flex items-start gap-[0.8em] rounded-[0.6em] bg-[#fdecec] p-[0.9em] text-[#7a2020]">
+            <span className="grid size-[2em] shrink-0 place-items-center rounded-full bg-[#d64545] text-white">
+              <CircleX className="size-[1.1em]" />
+            </span>
+            <div className="min-w-0 text-[0.75em]">
+              <p className="font-semibold text-[#b83232]">{t("Revoked Certificate")}</p>
+              <p className="mt-[0.2em] font-semibold text-[#0b1b2b]">
+                {result.cert.studentName} — {result.cert.title ?? result.cert.role}
+              </p>
+              <p className="mt-[0.2em]">
+                {t("Revoked")} {result.cert.revokedUtc ? formatDate(result.cert.revokedUtc) : ""} • {result.cert.trackName}
+              </p>
+              <p className="mt-[0.2em]" dir="ltr">
+                #{result.cert.code}
+              </p>
+              <p className="mt-[0.3em] italic">{t("This certificate was revoked and is no longer valid.")}</p>
+            </div>
+          </div>
+        )}
+
+        {result?.kind === "valid" && result.cert.status !== "Revoked" && (
           <div className="mt-[0.9em] flex items-start gap-[0.8em] rounded-[0.6em] bg-[#dbe8ff] p-[0.9em] text-[#14365a]">
             <span className="grid size-[2em] shrink-0 place-items-center rounded-full bg-[#0f6b57] text-white">
               <CircleCheck className="size-[1.1em]" />
@@ -87,23 +111,38 @@ export default function VerificationGateway() {
             <div className="min-w-0 text-[0.75em]">
               <p className="font-semibold text-[#0b6f86]">
                 {t("Valid & Authenticated Certificate")}
-                {result.cert.isSimulation && (
+                <span className="mx-[0.4em] text-[#14365a]/50">•</span>
+                <span className="font-medium text-[#3d4f61]">
+                  {result.cert.isSimulation
+                    ? t("Simulation")
+                    : result.cert.kind === "Capstone"
+                      ? t("Capstone")
+                      : t("Track Completion")}
+                </span>
+              </p>
+              <p className="mt-[0.2em] font-semibold text-[#0b1b2b]">
+                {result.cert.isSimulation
+                  ? `${result.cert.studentName} — ${result.cert.role} · ${result.cert.companyName}`
+                  : `${result.cert.studentName} — ${result.cert.title ?? result.cert.role}`}
+              </p>
+              <p className="mt-[0.2em] text-[#3d4f61]">
+                {t("Issued")} {formatDate(result.cert.issuedUtc)} • {result.cert.trackName}
+                {(result.cert.isSimulation || result.cert.scorePercent > 0) && (
                   <>
-                    <span className="mx-[0.4em] text-[#14365a]/50">•</span>
-                    <span className="font-medium text-[#3d4f61]">{t("Simulation")}</span>
+                    {" "}
+                    • {t("Score")} {result.cert.scorePercent}%
                   </>
                 )}
               </p>
-              <p className="mt-[0.2em] font-semibold text-[#0b1b2b]">
-                {result.cert.studentName} — {result.cert.role} · {result.cert.companyName}
-              </p>
-              <p className="mt-[0.2em] text-[#3d4f61]">
-                {t("Issued")} {formatDate(result.cert.issuedUtc)} • {result.cert.trackName} • {t("Score")} {result.cert.scorePercent}%
-              </p>
+              {result.cert.signerName && (
+                <p className="mt-[0.2em] text-[#3d4f61]">
+                  {t("Signed by {name}, {title}", { name: result.cert.signerName, title: t(result.cert.signerTitle ?? "Junior Hub Admin") })}
+                </p>
+              )}
               <p className="mt-[0.2em] text-[#3d4f61]" dir="ltr">
                 #{result.cert.code}
               </p>
-              {result.cert.disclaimer && <p className="mt-[0.3em] italic text-[#5b6b7c]">{result.cert.disclaimer}</p>}
+              {result.cert.disclaimer && <p className="mt-[0.3em] italic text-[#5b6b7c]">{t(result.cert.disclaimer)}</p>}
             </div>
           </div>
         )}

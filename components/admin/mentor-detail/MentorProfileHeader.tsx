@@ -2,8 +2,10 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { CalendarDays, Check, LoaderCircle, Mail, MessageSquare, Pencil, Phone, Shuffle } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, Check, LoaderCircle, Mail, MessageSquare, Pencil, Phone, Shuffle } from "lucide-react";
 import type { AdminMentor } from "@/lib/admin-api";
+import type { AdminMentorProfile } from "@/lib/admin-mentor-sessions-api";
+import { shortDate } from "./format";
 import { useT } from "@/lib/i18n/client";
 import { mentorAvatar } from "@/lib/avatars";
 import { PANEL, BTN_PRIMARY } from "../page-parts";
@@ -14,6 +16,7 @@ const LINK_BTN =
 /** Photo, name, chips, contact lines and the action buttons; `children` (the KPI strip) sits under them. */
 export function MentorProfileHeader({
   mentor: m,
+  profile,
   saving,
   error,
   onToggle,
@@ -21,6 +24,8 @@ export function MentorProfileHeader({
   children,
 }: {
   mentor: AdminMentor;
+  /** Contact, joined date and bio; null while loading or when it failed. */
+  profile?: AdminMentorProfile | null;
   saving: boolean;
   error: string | null;
   onToggle: () => void;
@@ -60,13 +65,18 @@ export function MentorProfileHeader({
               <Mail className="size-[1em] shrink-0" /> <span dir="ltr">{m.email ?? "—"}</span>
             </li>
             <li className="flex items-center gap-[0.5em]">
-              <Phone className="size-[1em] shrink-0" /> —
+              <Phone className="size-[1em] shrink-0" /> <span dir="ltr">{profile?.phone ?? "—"}</span>
             </li>
             <li className="flex items-center gap-[0.5em]">
               <CalendarDays className="size-[1em] shrink-0" />
+              {profile?.joinedUtc ? t("Joined {date}", { date: shortDate(profile.joinedUtc) }) : "—"}
+            </li>
+            <li className="flex items-center gap-[0.5em]">
+              <BriefcaseBusiness className="size-[1em] shrink-0" />
               {m.yearsOfExperience > 0 ? t("{n} years of experience", { n: m.yearsOfExperience }) : "—"}
             </li>
           </ul>
+          {profile?.bio && <p className="mt-[0.6em] max-w-[40em] text-[0.8em] leading-relaxed text-[#14365a]">{profile.bio}</p>}
         </div>
 
         <div className="flex w-full flex-col gap-[0.6em] sm:w-auto">

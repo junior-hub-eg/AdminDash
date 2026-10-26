@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { ArrowLeft } from "lucide-react";
 import { getAdminMentor, getAdminSquads, getMentorStudents, setMentorActive } from "@/lib/admin-api";
+import { getAdminSessions, getMentorFeedback, getMentorProfile } from "@/lib/admin-mentor-sessions-api";
 import { errorMessage } from "@/lib/api-client";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
@@ -20,9 +21,9 @@ import { CapacityWorkloadCard } from "./mentor-detail/CapacityWorkloadCard";
 import { UpcomingSessionsCard } from "./mentor-detail/UpcomingSessionsCard";
 import { WeeklyAvailabilityCard } from "./mentor-detail/WeeklyAvailabilityCard";
 import { AdminDirectControls } from "./mentor-detail/AdminDirectControls";
-import { EmptyCard } from "./mentor-detail/parts";
+import { PerformanceCard } from "./mentor-detail/PerformanceCard";
 
-/** One mentor: profile, workload, squads, students. Sessions, availability and reviews have no API yet. */
+/** One mentor: profile, workload, squads, students, sessions, availability, reviews and performance. */
 export default function AdminMentorDetail({ id }: { id: string }) {
   const t = useT();
   const loadMentor = useCallback(() => getAdminMentor(id), [id]);
@@ -30,6 +31,13 @@ export default function AdminMentorDetail({ id }: { id: string }) {
   const mentor = useAdminData(loadMentor, tk("We couldn't load this mentor. Please try again."));
   const students = useAdminData(loadStudents, tk("We couldn't load the students. Please try again."));
   const squads = useAdminData(getAdminSquads, tk("We couldn't load the squads. Please try again."));
+  const [feedbackPage, setFeedbackPage] = useState(1);
+  const loadProfile = useCallback(() => getMentorProfile(id), [id]);
+  const loadSessions = useCallback(() => getAdminSessions({ mentorId: id, status: "Upcoming", pageSize: 5 }), [id]);
+  const loadFeedback = useCallback(() => getMentorFeedback(id, feedbackPage, 10), [id, feedbackPage]);
+  const profile = useAdminData(loadProfile, tk("We couldn't load the mentor's details. Please try again."));
+  const sessions = useAdminData(loadSessions, tk("We couldn't load the sessions. Please try again."));
+  const feedback = useAdminData(loadFeedback, tk("We couldn't load the reviews. Please try again."));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<MentorTab>("overview");
@@ -61,6 +69,22 @@ export default function AdminMentorDetail({ id }: { id: string }) {
     requestAnimationFrame(() => document.getElementById("admin-direct-controls")?.scrollIntoView({ behavior: "smooth", block: "center" }));
   };
 
+  const onSessionCancelled = () => {
+    sessions.reload();
+    profile.reload();
+  };
+
+  const reviews = (full: boolean) => (
+    <RecentStudentFeedback
+      feedback={feedback.data}
+      error={feedback.error}
+      onRetry={feedback.reload}
+      full={full}
+      onViewAll={() => setTab("reviews")}
+      onPage={setFeedbackPage}
+    />
+  );
+
   const squadsSection = (
     <ActiveSquadsOversight squads={mine} error={squads.error} onRetry={squads.reload} full={tab === "squads"} />
   );
@@ -84,8 +108,8 @@ export default function AdminMentorDetail({ id }: { id: string }) {
         <LoadState error={mentor.error} onRetry={mentor.reload} />
       ) : (
         <>
-          <MentorProfileHeader mentor={m} saving={saving} error={error} onToggle={toggle} onReassign={openPicker}>
-            <MentorKpiStrip mentor={m} />
+          <MentorProfileHeader mentor={m} profile={profile.data} saving={saving} error={error} onToggle={toggle} onReassign={openPicker}>
+            <MentorKpiStrip mentor={m} profile={profile.data} />
           </MentorProfileHeader>
           <MentorTabs
             value={tab}
@@ -98,12 +122,24 @@ export default function AdminMentorDetail({ id }: { id: string }) {
               <div className="grid min-w-0 gap-[1.2em]">
                 {squadsSection}
                 {roster}
-                <RecentStudentFeedback />
+                {reviews(false)}
               </div>
               <div className="grid min-w-0 gap-[1.2em]">
-                <CapacityWorkloadCard mentor={m} students={students.data?.length ?? m.students} squads={mine?.length ?? m.monitoredSquads} />
-                <UpcomingSessionsCard />
-                <WeeklyAvailabilityCard />
+                <CapacityWorkloadCard
+                  mentor={m}
+                  students={students.data?.length ?? m.students}
+                  squads={mine?.length ?? m.monitoredSquads}
+                  profile={profile.data}
+                  onCapacitySaved={(maxStudents) => profile.setData((p) => (p ? { ...p, maxStudents } : p))}
+                />
+                <UpcomingSessionsCard
+                  mentorId={id}
+                  sessions={sessions.data?.items ?? null}
+                  error={sessions.error}
+                  onRetry={sessions.reload}
+                  onCancelled={onSessionCancelled}
+                />
+                <WeeklyAvailabilityCard profile={profile.data} error={profile.error} onRetry={profile.reload} />
                 <AdminDirectControls
                   mentor={m}
                   squads={squads.data}
@@ -119,11 +155,11 @@ export default function AdminMentorDetail({ id }: { id: string }) {
           ) : tab === "students" ? (
             roster
           ) : tab === "schedule" ? (
-            <EmptyCard title={t("Weekly Schedule & Availability")} text={t("This mentor hasn't shared a weekly schedule yet.")} />
+            <WeeklyAvailabilityCard profile={profile.data} error={profile.error} onRetry={profile.reload} full />
           ) : tab === "reviews" ? (
-            <EmptyCard title={t("Student Reviews")} text={t("No student reviews to show yet.")} />
+            reviews(true)
           ) : (
-            <EmptyCard title={t("Performance & Evaluation")} text={t("No performance evaluations recorded yet.")} />
+            <PerformanceCard profile={profile.data} error={profile.error} onRetry={profile.reload} />
           )}
         </>
       )}

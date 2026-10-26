@@ -1,93 +1,122 @@
 "use client";
 
-import { Crown, LogIn } from "lucide-react";
-import type { AdminAccount } from "@/lib/admin-api";
+import { useCallback, useState } from "react";
+import { CircleCheck, CircleX, LogIn } from "lucide-react";
+import { getLoginAttempts } from "@/lib/admin-security-api";
 import { useT } from "@/lib/i18n/client";
-import { dateLocale, type TFunction } from "@/lib/i18n/translate";
-import { LoadState } from "../admin-data";
-import { Empty, Initials, Pill } from "../reports/ui";
+import { tk } from "@/lib/i18n/translate";
+import { LoadState, useAdminData } from "../admin-data";
+import { INPUT } from "../page-parts";
+import { DASH, Empty, Pill, fmt } from "../reports/ui";
+import { ago, deviceOf, stamp } from "./audit-ui";
+import { Pager } from "./SecurityPanels";
 
-/** "3h ago", "Yesterday"... for the last sign-in. */
-export function ago(t: TFunction, iso: string, now: number) {
-  const minutes = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
-  if (minutes < 1) return t("Just now");
-  if (minutes < 60) return t("{count}m ago", { count: minutes });
-  if (minutes < 1440) return t("{count}h ago", { count: Math.floor(minutes / 60) });
-  const days = Math.floor(minutes / 1440);
-  return days === 1 ? t("Yesterday") : t("{count}d ago", { count: days });
-}
 
-const stamp = (iso: string) =>
-  new Date(iso).toLocaleString(dateLocale("en-GB"), { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const PAGE_SIZE = 15;
 
-/** Login History: every admin account with its last sign-in (from GET admin/admins). */
-export function AdminSignIns({
-  admins,
-  error,
-  onRetry,
-  now,
-}: {
-  admins: AdminAccount[] | null;
-  error: string | null;
-  onRetry: () => void;
-  now: number;
-}) {
+/** Why a sign-in failed, from the backend's error code. */
+const REASON: Record<string, string> = {
+  INVALID_CREDENTIALS: tk("Wrong email or password"),
+  ACCOUNT_LOCKED: tk("Account locked"),
+  NOT_AN_ADMIN: tk("Not an admin account"),
+  EMAIL_NOT_CONFIRMED: tk("Email not confirmed"),
+  ACCOUNT_PENDING_APPROVAL: tk("Waiting for approval"),
+  ACCOUNT_REJECTED: tk("Sign-up rejected"),
+  VALIDATION_FAILED: tk("Missing email or password"),
+  NOT_A_STUDENT: tk("No profile for this account"),
+};
+
+/** Login History: every sign-in attempt on both login pages (GET admin/security/logins). */
+export function AdminSignIns({ now }: { now: number }) {
   const t = useT();
-  if (!admins) return <LoadState error={error} onRetry={onRetry} />;
-  if (admins.length === 0) return <Empty icon={LogIn} title={t("No admin accounts")} />;
-
-  // Most recent sign-in first; accounts that never signed in go last.
-  const sorted = [...admins].sort((a, b) => (b.lastLoginUtc ?? "").localeCompare(a.lastLoginUtc ?? ""));
+  const [status, setStatus] = useState<"" | "true" | "false">("");
+  const [page, setPage] = useState(1);
+  const load = useCallback(
+    () => getLoginAttempts(status === "" ? undefined : status === "true", page, PAGE_SIZE),
+    [status, page],
+  );
+  const logins = useAdminData(load, tk("We couldn't load the sign-in history. Please try again."));
+  const pages = logins.data ? Math.max(1, Math.ceil(logins.data.total / PAGE_SIZE)) : 1;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[36em] text-[0.78em]">
-        <thead>
-          <tr className="text-[0.82em] uppercase tracking-[0.05em] text-[#5b6b7c]">
-            <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("Administrator")}</th>
-            <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("Role")}</th>
-            <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("Last sign-in")}</th>
-            <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("Account created")}</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[#e6edf3] bg-white">
-          {sorted.map((a) => (
-            <tr key={a.id}>
-              <td className="px-[0.9em] py-[0.8em]">
-                <span className="flex items-center gap-[0.6em]">
-                  <Initials name={a.fullName} />
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-[#0b1b2b]">{a.fullName}</span>
-                    <span dir="ltr" className="block truncate text-[0.9em] text-[#8a97a6] rtl:text-end">
-                      {a.email}
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-[0.6em]">
+        <select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value as "" | "true" | "false");
+            setPage(1);
+          }}
+          aria-label={t("Filter by result")}
+          className={`${INPUT} sm:w-[14em]`}
+        >
+          <option value="">{t("All attempts")}</option>
+          <option value="true">{t("Successful")}</option>
+          <option value="false">{t("Failed")}</option>
+        </select>
+        <span className="text-[0.72em] text-[#5b6b7c]">{t("{count} attempts", { count: fmt(logins.data?.total ?? 0) })}</span>
+      </div>
+
+      {!logins.data ? (
+        <LoadState error={logins.error} onRetry={logins.reload} />
+      ) : logins.data.items.length === 0 ? (
+        <Empty icon={LogIn} title={t("No sign-in attempts yet")} className="mt-[1em]" />
+      ) : (
+        <div className="mt-[1em] overflow-x-auto">
+          <table className="w-full min-w-[40em] text-[0.78em]">
+            <thead>
+              <tr className="text-[0.82em] uppercase tracking-[0.05em] text-[#5b6b7c]">
+                <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("Account")}</th>
+                <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("Result")}</th>
+                <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("When")}</th>
+                <th className="px-[0.9em] py-[0.7em] text-start font-bold">{t("IP & Client")}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#e6edf3] bg-white">
+              {logins.data.items.map((a) => (
+                <tr key={a.id} className="align-top">
+                  <td className="px-[0.9em] py-[0.8em]">
+                    <span dir="ltr" className="block truncate font-semibold text-[#0b1b2b] rtl:text-end">
+                      {a.email || DASH}
                     </span>
-                  </span>
-                </span>
-              </td>
-              <td className="px-[0.9em] py-[0.8em]">
-                {a.isOwner ? (
-                  <Pill tone="amber">
-                    <Crown className="size-[1em]" /> {t("Main admin")}
-                  </Pill>
-                ) : (
-                  <Pill tone="cyan">{t("Admin")}</Pill>
-                )}
-              </td>
-              <td className="px-[0.9em] py-[0.8em]">
-                {a.lastLoginUtc ? (
-                  <>
-                    <span className="block font-semibold text-[#0b1b2b]">{ago(t, a.lastLoginUtc, now)}</span>
-                    <span className="block text-[0.9em] text-[#8a97a6]">{stamp(a.lastLoginUtc)}</span>
-                  </>
-                ) : (
-                  <span className="text-[#8a97a6]">{t("Never signed in")}</span>
-                )}
-              </td>
-              <td className="px-[0.9em] py-[0.8em] text-[#5b6b7c]">{stamp(a.createdUtc)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                    <span className="block text-[0.9em] text-[#8a97a6]">
+                      {a.role ? t(a.role) : t("Unknown account")} · {a.adminLogin ? t("Admin login") : t("Main login")}
+                    </span>
+                  </td>
+                  <td className="px-[0.9em] py-[0.8em]">
+                    {a.succeeded ? (
+                      <Pill tone="green">
+                        <CircleCheck className="size-[1em]" /> {t("Successful")}
+                      </Pill>
+                    ) : (
+                      <>
+                        <Pill tone="red">
+                          <CircleX className="size-[1em]" /> {t("Failed")}
+                        </Pill>
+                        {a.failureReason && <span className="mt-[0.3em] block text-[0.9em] text-[#8a97a6]">{t(REASON[a.failureReason] ?? a.failureReason)}</span>}
+                      </>
+                    )}
+                  </td>
+                  <td className="px-[0.9em] py-[0.8em]">
+                    <span className="block font-semibold text-[#0b1b2b]">{ago(t, a.createdUtc, now)}</span>
+                    <span className="block text-[0.9em] text-[#8a97a6]">{stamp(a.createdUtc)}</span>
+                  </td>
+                  <td className="px-[0.9em] py-[0.8em] text-[#5b6b7c]">
+                    <span dir="ltr" className="block font-mono rtl:text-end">
+                      {a.ip ?? DASH}
+                    </span>
+                    <span className="block text-[0.9em] text-[#8a97a6]">{deviceOf(t, a.userAgent)}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-[0.8em] flex justify-end text-[0.72em] text-[#5b6b7c]">
+        <Pager page={page} pages={pages} onChange={setPage} />
+      </div>
+    </>
   );
 }

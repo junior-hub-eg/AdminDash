@@ -15,27 +15,44 @@ import {
   ShieldHalf,
   UserCog,
 } from "lucide-react";
-import { getAdmins } from "@/lib/admin-api";
+import { downloadAuditCsv, getAdminSessions, getSecurityOverview } from "@/lib/admin-security-api";
+import { errorMessage } from "@/lib/api-client";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
 import { AdminSurface, BTN_PRIMARY, BTN_SECONDARY, PageHeader, StatCard, StatGrid } from "./page-parts";
 import { useAdminData } from "./admin-data";
-import { DASH, Empty, Section, Soon, TabBar } from "./reports/ui";
+import { DASH, Section, TabBar, fmt } from "./reports/ui";
 import { AdminSignIns } from "./security/AdminSignIns";
-import { AccountSecurity, ActiveInspector, EventLog, HardeningStatus, POLICIES } from "./security/SecurityPanels";
+import { AccountSecurity, ActiveInspector, EventLog, HardeningStatus, POLICIES, policyStatus, SessionList } from "./security/SecurityPanels";
 
 type Tab = "audit" | "sessions" | "logins" | "policies";
-
-const WEEK = 7 * 24 * 60 * 60 * 1000;
 
 export default function AdminSecurity() {
   const t = useT();
   const [tab, setTab] = useState<Tab>("audit");
   const [now] = useState(() => Date.now());
-  const admins = useAdminData(getAdmins, tk("We couldn't load the admin accounts. Please try again."));
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const overview = useAdminData(getSecurityOverview, tk("We couldn't load the security overview. Please try again."));
+  const sessions = useAdminData(getAdminSessions, tk("We couldn't load the admin sessions. Please try again."));
 
-  const list = admins.data;
-  const recent = list?.filter((a) => a.lastLoginUtc && now - new Date(a.lastLoginUtc).getTime() < WEEK).length ?? 0;
+  const o = overview.data;
+  const refreshSessions = () => {
+    sessions.reload();
+    overview.reload();
+  };
+
+  async function exportLog() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await downloadAuditCsv();
+    } catch (e) {
+      setExportError(errorMessage(e, tk("We couldn't export the audit log. Please try again.")));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <AdminSurface>
@@ -45,7 +62,7 @@ export default function AdminSecurity() {
         description={t("Monitor administrative sessions, audit system actions, review admin sign-ins and security policies across Junior Hub.")}
         actions={
           <>
-            <button type="button" disabled title={t("Coming soon")} className={BTN_SECONDARY}>
+            <button type="button" onClick={exportLog} disabled={exporting} title={exportError ?? undefined} className={BTN_SECONDARY}>
               <Download className="size-[1.1em]" /> {t("Export Security Log")}
             </button>
             <button type="button" onClick={() => setTab("policies")} className={BTN_PRIMARY}>
@@ -56,15 +73,35 @@ export default function AdminSecurity() {
       />
 
       <StatGrid>
-        <StatCard label={t("Active Sessions")} value={DASH} icon={MonitorSmartphone} tone="cyan" hint={t("Session tracking coming soon")} />
-        <StatCard label={t("Failed Login Attempts")} value={DASH} icon={ShieldAlert} tone="red" hint={t("Login monitoring coming soon")} />
-        <StatCard label={t("Security Alerts")} value={DASH} icon={BellRing} tone="violet" hint={t("Alerting coming soon")} />
+        <StatCard
+          label={t("Active Sessions")}
+          value={o ? fmt(o.activeSessions) : DASH}
+          icon={MonitorSmartphone}
+          tone="cyan"
+          hint={t("Admin sessions that stay signed in")}
+        />
+        <StatCard
+          label={t("Failed Login Attempts")}
+          value={o ? fmt(o.failedLogins24h) : DASH}
+          icon={ShieldAlert}
+          tone="red"
+          badge={o && o.failedLogins24h > 0 ? t("Review") : undefined}
+          badgeTone="warn"
+          hint={t("In the last 24 hours")}
+        />
+        <StatCard
+          label={t("Security Alerts")}
+          value={o ? fmt(o.criticalEvents7d) : DASH}
+          icon={BellRing}
+          tone="violet"
+          hint={t("Critical events in the last 7 days")}
+        />
         <StatCard
           label={t("Admin Accounts")}
-          value={list ? list.length : DASH}
+          value={o ? fmt(o.admins) : DASH}
           icon={UserCog}
           tone="green"
-          badge={list ? t("{count} this week", { count: recent }) : undefined}
+          badge={o ? t("{count} this week", { count: o.adminsSignedInThisWeek }) : undefined}
           badgeTone="up"
           hint={t("Signed in during the last 7 days")}
         />
@@ -76,50 +113,48 @@ export default function AdminSecurity() {
         onChange={setTab}
         tabs={[
           { id: "audit", label: t("Audit Trail Ledger"), icon: ScrollText },
-          { id: "sessions", label: t("Active Admin Sessions"), icon: Laptop },
-          { id: "logins", label: t("Login History"), icon: LogIn, count: list?.length },
+          { id: "sessions", label: t("Active Admin Sessions"), icon: Laptop, count: sessions.data?.length },
+          { id: "logins", label: t("Login History"), icon: LogIn },
           { id: "policies", label: t("Security Policies"), icon: ShieldHalf },
         ]}
       />
 
       <div className="grid items-start gap-[1.4em] xl:grid-cols-[minmax(0,1fr)_22em]">
         <div className="flex min-w-0 flex-col gap-[1.4em]">
-          {tab === "audit" && <EventLog />}
+          {tab === "audit" && <EventLog now={now} />}
 
           {tab === "sessions" && (
-            <Section icon={Laptop} title={t("Active Admin Sessions")} aside={<Soon />}>
-              <Empty
-                icon={Laptop}
-                title={t("Session tracking is not available yet")}
-                text={t("Signed-in devices, locations and idle time will be listed here.")}
-                className="mt-[1em]"
-              />
+            <Section
+              icon={Laptop}
+              title={t("Active Admin Sessions")}
+              description={t("Admin sessions that stay signed in on a device. Revoke one to sign it out.")}
+            >
+              <SessionList sessions={sessions.data} error={sessions.error} onRetry={sessions.reload} onRevoked={refreshSessions} now={now} />
             </Section>
           )}
 
           {tab === "logins" && (
             <Section
               icon={LogIn}
-              title={t("Admin sign-ins")}
-              description={t("Every admin account and when it last signed in.")}
+              title={t("Login History")}
+              description={t("Every sign-in attempt on the main and admin login pages.")}
             >
               <div className="mt-[1em]">
-                <AdminSignIns admins={list} error={admins.error} onRetry={admins.reload} now={now} />
+                <AdminSignIns now={now} />
               </div>
-              <p className="mt-[0.8em] text-[0.7em] text-[#8a97a6]">{t("Geo-IP and device details are coming soon.")}</p>
             </Section>
           )}
 
           {tab === "policies" && (
-            <Section icon={ShieldHalf} title={t("Security Policies")} description={t("Rules that protect the admin panel.")} aside={<Soon />}>
+            <Section icon={ShieldHalf} title={t("Security Policies")} description={t("Rules that protect the admin panel.")}>
               <ul className="mt-[1em] grid gap-[0.8em] md:grid-cols-2">
                 {POLICIES.map((p) => (
-                  <li key={p.title} className="rounded-[0.9em] bg-[#f5f8fe] p-[1em]">
+                  <li key={p.id} className="rounded-[0.9em] bg-[#f5f8fe] p-[1em]">
                     <p.icon className="size-[1.3em] text-[#0b89a6]" />
                     <p className="mt-[0.5em] text-[0.88em] font-bold text-[#0b1b2b]">{t(p.title)}</p>
                     <p className="text-[0.72em] text-[#5b6b7c]">{t(p.text)}</p>
                     <p className="mt-[0.6em] text-[0.72em] font-semibold text-[#8a97a6]">
-                      {t("Status")}: {DASH}
+                      {t("Status")}: {policyStatus(t, p.id, o)}
                     </p>
                   </li>
                 ))}
@@ -147,9 +182,9 @@ export default function AdminSecurity() {
         </div>
 
         <aside className="flex min-w-0 flex-col gap-[1.4em]">
-          <ActiveInspector />
-          <HardeningStatus />
-          <AccountSecurity />
+          <ActiveInspector sessions={sessions.data} error={sessions.error} onRetry={sessions.reload} onRevoked={refreshSessions} now={now} />
+          <HardeningStatus overview={o} />
+          <AccountSecurity overview={o} now={now} onChanged={refreshSessions} />
         </aside>
       </div>
     </AdminSurface>

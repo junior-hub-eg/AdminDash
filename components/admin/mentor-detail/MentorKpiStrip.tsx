@@ -2,13 +2,21 @@
 
 import { Clock, GraduationCap, Star, UsersRound, Zap } from "lucide-react";
 import type { AdminMentor } from "@/lib/admin-api";
+import type { AdminMentorProfile } from "@/lib/admin-mentor-sessions-api";
 import { useT } from "@/lib/i18n/client";
 
-/** Rating, squads and students are real; office hours and response time have no API yet. */
-export function MentorKpiStrip({ mentor: m }: { mentor: AdminMentor }) {
+/** Rating (from session reviews), squads, students, completed mentoring hours and the reply time to students. */
+export function MentorKpiStrip({ mentor: m, profile }: { mentor: AdminMentor; profile?: AdminMentorProfile | null }) {
   const t = useT();
+  const rating = profile ? profile.averageRating : m.rating;
+  const reply = profile?.averageReplyHours;
   const items = [
-    { icon: Star, value: m.rating.toFixed(2), unit: "/ 5.0", label: t("Student Rating") },
+    {
+      icon: Star,
+      value: rating.toFixed(2),
+      unit: "/ 5.0",
+      label: profile ? t("Student Rating ({n} reviews)", { n: profile.ratingsCount }) : t("Student Rating"),
+    },
     {
       icon: UsersRound,
       value: `${m.monitoredSquads} ${m.monitoredSquads === 1 ? t("Squad") : t("Squads")}`,
@@ -16,8 +24,18 @@ export function MentorKpiStrip({ mentor: m }: { mentor: AdminMentor }) {
       label: m.squadNames.length ? m.squadNames.join(" & ") : t("No squad yet"),
     },
     { icon: GraduationCap, value: String(m.students), unit: "", label: t("Assigned Students") },
-    { icon: Clock, value: "—", unit: "", label: t("Completed Office Hours") },
-    { icon: Zap, value: "—", unit: "", label: t("Response SLA") },
+    {
+      icon: Clock,
+      value: profile ? String(profile.mentoringHours) : "—",
+      unit: profile ? t("hrs") : "",
+      label: t("Completed Office Hours"),
+    },
+    {
+      icon: Zap,
+      value: reply == null ? "—" : reply < 1 ? t("< 1 hr") : t("{n} hrs", { n: reply }),
+      unit: "",
+      label: t("Response SLA"),
+    },
   ];
   return (
     <ul className="grid gap-[0.7em] rounded-[1em] bg-[#f4f8fd] p-[0.8em] min-[480px]:grid-cols-2 lg:grid-cols-5">
