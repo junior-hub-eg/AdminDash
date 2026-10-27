@@ -59,8 +59,15 @@ function fileNameOf(header: string | null) {
 }
 
 /** Downloads the report as an Excel file in the chosen language. Throws ApiError like api.get. */
-export async function downloadReportExport(q: ReportQuery & { lang: "en" | "ar" }) {
-  const path = `/api/v1/admin/reports/export?${query(q)}`;
+export function downloadReportExport(q: ReportQuery & { lang: "en" | "ar" }) {
+  return downloadAdminFile(
+    `/api/v1/admin/reports/export?${query(q)}`,
+    `junior-hub-report-${q.from}-to-${q.to}${q.trackCode ? `-${q.trackCode.toLowerCase()}` : ""}-${q.lang}.xlsx`,
+  );
+}
+
+/** Saves a file an admin endpoint sends (with the access token), named as the server says or `fallbackName`. Throws ApiError like api.get. */
+export async function downloadAdminFile(path: string, fallbackName: string) {
   if (!API_BASE_URL) throw new ApiError(`No API base URL configured for "${path}".`, 0);
 
   const send = async () => {
@@ -92,9 +99,7 @@ export async function downloadReportExport(q: ReportQuery & { lang: "en" | "ar" 
   }
 
   const blob = await res.blob();
-  const name =
-    fileNameOf(res.headers.get("Content-Disposition")) ??
-    `junior-hub-report-${q.from}-to-${q.to}${q.trackCode ? `-${q.trackCode.toLowerCase()}` : ""}-${q.lang}.xlsx`;
+  const name = fileNameOf(res.headers.get("Content-Disposition")) ?? fallbackName;
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
