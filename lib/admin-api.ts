@@ -249,7 +249,11 @@ export interface AdminRole {
   meta: string;
   isSystemRole: boolean;
   permissions: RolePermission[];
+  /** Whose pages the matrix lists: the admin site, or the Mentor, Teacher or Student dashboard (27 Oct 2026). */
+  audience: RoleAudience;
 }
+
+export type RoleAudience = "Admin" | "Mentor" | "Teacher" | "Student";
 
 export const getAdminRoles = () => api.get<AdminRole[]>("/api/v1/admin/roles");
 /** The description is left as it is. */
