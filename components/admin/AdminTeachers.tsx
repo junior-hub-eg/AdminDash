@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { BookOpenCheck, ClipboardList, Download, GraduationCap, MessageCircleQuestion, Search, UsersRound } from "lucide-react";
+import { BookOpenCheck, ClipboardList, Download, GraduationCap, MessageCircleQuestion, Search, UserPlus, UsersRound } from "lucide-react";
 import { getAdminTeachers, STATUS_LABEL, type AdminTeacher } from "@/lib/admin-teachers-api";
 import { useI18n } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
@@ -37,6 +37,7 @@ const STATUS_STYLE: Record<string, string> = {
   Active: "bg-[#d7efe6] text-[#12676b]",
   PendingApproval: "bg-[#fff3d6] text-[#9a6a00]",
   Rejected: "bg-[#fdecec] text-[#b83232]",
+  Suspended: "bg-[#eef2f7] text-[#5b6b7c]",
 };
 
 /** Every teacher with their classes, students, grading and questions (27 Oct 2026). */
@@ -78,14 +79,22 @@ export default function AdminTeachers() {
               {t("Follow every teacher's classes, students, assignments, grading, questions and messages.")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => exportRoster(shown)}
-            disabled={shown.length === 0}
-            className="inline-flex items-center gap-[0.4em] rounded-[0.6em] border border-[#e1e8f0] bg-white px-[1.1em] py-[0.6em] text-[0.8em] font-semibold text-[#14365a] shadow-sm hover:bg-[#f1f6fb] disabled:opacity-50"
-          >
-            <Download className="size-[1em]" /> {t("Export Roster")}
-          </button>
+          <div className="flex flex-wrap items-center gap-[0.6em]">
+            <button
+              type="button"
+              onClick={() => exportRoster(shown)}
+              disabled={shown.length === 0}
+              className="inline-flex items-center gap-[0.4em] rounded-[0.6em] border border-[#e1e8f0] bg-white px-[1.1em] py-[0.6em] text-[0.8em] font-semibold text-[#14365a] shadow-sm hover:bg-[#f1f6fb] disabled:opacity-50"
+            >
+              <Download className="size-[1em]" /> {t("Export Roster")}
+            </button>
+            <Link
+              href={"/admin/teachers/new" as Route}
+              className="inline-flex items-center gap-[0.4em] rounded-[0.6em] bg-[#06b6d4] px-[1.2em] py-[0.6em] text-[0.8em] font-semibold text-white shadow-[0_6px_16px_rgba(6,182,212,0.35)] hover:bg-[#0aa5c0]"
+            >
+              <UserPlus className="size-[1.1em]" /> {t("Add Teacher")}
+            </Link>
+          </div>
         </section>
 
         <ul className="mt-[1.2em] grid gap-[0.8em] min-[480px]:grid-cols-2 lg:grid-cols-5">

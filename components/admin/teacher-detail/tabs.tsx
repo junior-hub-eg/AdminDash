@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Download, Hash, LoaderCircle, Megaphone, User } from "lucide-react";
 import {
   downloadTeacherReport,
@@ -15,6 +15,8 @@ import {
   getTeacherQuestions,
   getTeacherStudentThread,
   getTeacherStudents,
+  gradeSubmission,
+  moveAssignmentDue,
   type AssignmentStatus,
   type MessageThread,
   type StudentStatus,
@@ -23,7 +25,7 @@ import {
 import { errorMessage } from "@/lib/api-client";
 import { useI18n, useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
-import { BTN_SECONDARY } from "../page-parts";
+import { BTN_SECONDARY, INPUT } from "../page-parts";
 import { LoadState, useAdminData } from "../admin-data";
 import { Bar, EmptyNote, Section, SOFT } from "../mentor-detail/parts";
 import { dayTime, plainDate, shortDate } from "../mentor-detail/format";
@@ -252,15 +254,112 @@ export function TeacherStudentsTab({ id }: { id: string }) {
 
 // ---------- Assignments ----------
 
-function AssignmentStudents({ id, assignmentId }: { id: string; assignmentId: string }) {
+/** "2026-10-27T13:00" in local time, for a datetime-local input. */
+const localInput = (iso: string) => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+function GradeRow({ id, a, s, onSaved }: { id: string; a: TeacherAssignmentDetail; s: TeacherAssignmentDetail["students"][number]; onSaved: (d: TeacherAssignmentDetail) => void }) {
+  const t = useT();
+  const [score, setScore] = useState(s.score == null ? "" : String(s.score));
+  const [feedback, setFeedback] = useState(s.feedback ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    const value = Number(score);
+    if (score === "" || Number.isNaN(value) || value < 0 || value > a.maxPoints) {
+      setError(t("The score is 0 to {max}.", { max: a.maxPoints }));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      onSaved(await gradeSubmission(id, a.id, s.studentId, value, feedback.trim()));
+    } catch (err) {
+      setError(errorMessage(err, tk("We couldn't save the grade. Please try again.")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="mt-[0.4em] flex flex-wrap items-center gap-[0.4em]">
+      <input
+        type="number"
+        min={0}
+        max={a.maxPoints}
+        step="0.5"
+        value={score}
+        onChange={(e) => setScore(e.target.value)}
+        aria-label={t("Score")}
+        className={`${INPUT} w-[6em] !text-[1em]`}
+      />
+      <span className="text-[#5b6b7c]">/ {a.maxPoints}</span>
+      <input
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+        placeholder={t("Feedback (optional)")}
+        aria-label={t("Feedback (optional)")}
+        className={`${INPUT} min-w-[12em] flex-1 !text-[1em]`}
+      />
+      <button type="submit" disabled={busy} className={`${BTN_SECONDARY} !py-[0.45em] !text-[1em]`}>
+        {busy && <LoaderCircle className="size-[1em] animate-spin" />} {s.score == null ? t("Grade") : t("Update Grade")}
+      </button>
+      {error && <span role="alert" className="w-full text-[#b83232]">{error}</span>}
+    </form>
+  );
+}
+
+function AssignmentStudents({ id, assignmentId, onChanged }: { id: string; assignmentId: string; onChanged: () => void }) {
   const t = useT();
   const load = useCallback(() => getTeacherAssignment(id, assignmentId), [id, assignmentId]);
   const data = useAdminData<TeacherAssignmentDetail>(load, tk("We couldn't load the assignment. Please try again."));
+  const [due, setDue] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   if (!data.data) return <LoadState error={data.error} onRetry={data.reload} />;
   const a = data.data;
+  const saved = (d: TeacherAssignmentDetail) => {
+    data.setData(d);
+    onChanged();
+  };
+
+  async function moveDue(e: FormEvent) {
+    e.preventDefault();
+    if (!due) return;
+    setBusy(true);
+    setError(null);
+    try {
+      saved(await moveAssignmentDue(id, a.id, new Date(due).toISOString()));
+      setDue(null);
+    } catch (err) {
+      setError(errorMessage(err, tk("We couldn't move the due date. Please try again.")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="grid gap-[0.5em] pt-[0.6em]">
-      {a.instructions && <p className="text-[0.8em] text-[#14365a]">{a.instructions}</p>}
+      {a.instructions && <p dir="auto" className="text-[0.8em] text-[#14365a]">{a.instructions}</p>}
+      <form onSubmit={moveDue} className="flex flex-wrap items-center gap-[0.5em] text-[0.78em]">
+        <span className="font-semibold text-[#0b1b2b]">{t("Due date")}</span>
+        <input
+          type="datetime-local"
+          value={due ?? localInput(a.dueUtc)}
+          onChange={(e) => setDue(e.target.value)}
+          aria-label={t("Due date")}
+          className={`${INPUT} !text-[1em]`}
+        />
+        <button type="submit" disabled={busy || !due} className={`${BTN_SECONDARY} !py-[0.45em] !text-[1em]`}>
+          {busy && <LoaderCircle className="size-[1em] animate-spin" />} {t("Move Due Date")}
+        </button>
+        {error && <span role="alert" className="w-full text-[#b83232]">{error}</span>}
+      </form>
       <ul className="grid gap-[0.4em] text-[0.78em]">
         {a.students.map((s) => (
           <li key={s.studentId} className="rounded-[0.6em] bg-white px-[0.8em] py-[0.5em]">
@@ -272,7 +371,8 @@ function AssignmentStudents({ id, assignmentId }: { id: string; assignmentId: st
               </span>
             </div>
             {s.answer && <p dir="auto" className="mt-[0.3em] whitespace-pre-wrap text-[#5b6b7c]">{s.answer}</p>}
-            {s.feedback && <p className="mt-[0.2em] text-[#0b6f86]">{t("Teacher feedback: {text}", { text: s.feedback })}</p>}
+            {s.feedback && <p dir="auto" className="mt-[0.2em] text-[#0b6f86]">{t("Teacher feedback: {text}", { text: s.feedback })}</p>}
+            {s.submittedUtc && <GradeRow key={`${s.score}-${s.feedback}`} id={id} a={a} s={s} onSaved={saved} />}
           </li>
         ))}
       </ul>
@@ -315,7 +415,7 @@ export function TeacherAssignmentsTab({ id }: { id: string }) {
                     <ChevronDown className={`size-[1.1em] transition-transform ${open === a.id ? "rotate-180" : ""}`} />
                   </span>
                 </button>
-                {open === a.id && <AssignmentStudents id={id} assignmentId={a.id} />}
+                {open === a.id && <AssignmentStudents id={id} assignmentId={a.id} onChanged={data.reload} />}
               </li>
             );
           })}
