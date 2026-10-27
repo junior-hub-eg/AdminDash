@@ -7,7 +7,7 @@ import { tk } from "@/lib/i18n/translate";
 import { downloadAdminFile } from "@/lib/admin-reports-api";
 import type { Gender } from "@/lib/avatars";
 
-export type UserStatus = "PendingActivation" | "PendingEmailConfirmation" | "Active" | "PendingApproval" | "Rejected";
+export type UserStatus = "PendingActivation" | "PendingEmailConfirmation" | "Active" | "PendingApproval" | "Rejected" | "Suspended";
 /** How an account's status reads on the page. */
 export const STATUS_LABEL: Record<string, string> = {
   Active: tk("Active"),
@@ -15,7 +15,11 @@ export const STATUS_LABEL: Record<string, string> = {
   PendingEmailConfirmation: tk("Email not confirmed"),
   PendingActivation: tk("Not activated"),
   Rejected: tk("Rejected"),
+  Suspended: tk("Deactivated"),
 };
+
+/** The subjects a teacher can teach (backend SchoolSubject). */
+export const SUBJECTS = ["Math", "Science", "Physics", "Language", "Biology", "Chemistry"] as const;
 
 export type StudentStatus = "TopQuartile" | "OnTrack" | "NeedsAssistance";
 export type AssignmentStatus = "NotStarted" | "Submitted" | "Late" | "Graded" | "Missing";
@@ -246,3 +250,72 @@ export const getTeacherCalendar = (id: string, from: string, to: string) =>
 export const getTeacherProgress = (id: string) => api.get<TeacherProgress>(`${base(id)}/progress`);
 export const downloadTeacherReport = (id: string, lang: "en" | "ar") =>
   downloadAdminFile(`${base(id)}/progress/export?lang=${lang}`, `teacher-report-${lang}.xlsx`);
+
+// ---------- The admin manages the teachers (27 Oct 2026) ----------
+
+export interface School {
+  id: string;
+  name: string;
+}
+
+export interface TeacherAccount {
+  fullName: string;
+  schoolId: string;
+  subjects: string[];
+  grades: number[];
+}
+
+export interface NewTeacher extends TeacherAccount {
+  email: string;
+  password: string;
+  phone?: string;
+}
+
+export interface ClassStudent {
+  id: string;
+  fullName: string;
+  email: string;
+  joinedVia: "School" | "Code";
+  attendance: number;
+  mastery: number | null;
+  status: StudentStatus;
+  lastActiveUtc: string | null;
+}
+
+export interface TeacherClassDetail {
+  id: string;
+  grade: number;
+  name: string;
+  joinCode: string;
+  autoAccept: boolean;
+  subjects: string[];
+  students: ClassStudent[];
+  requests: { studentId: string; fullName: string; requestedUtc: string }[];
+}
+
+export const getSchools = async () =>
+  (await api.get<{ schools: School[] }>("/api/v1/auth/signup-options")).schools;
+export const createTeacher = (body: NewTeacher) => api.post<AdminTeacher>("/api/v1/admin/teachers", body);
+export const updateTeacher = (id: string, body: TeacherAccount) => api.put<AdminTeacher>(base(id), body);
+/** Deactivated teachers cannot sign in; they are signed out everywhere. */
+export const setTeacherActive = (id: string, isActive: boolean) => api.patch<AdminTeacher>(base(id), { isActive });
+export const setTeacherPassword = (id: string, password: string) => api.put<void>(`${base(id)}/password`, { password });
+/** Only a teacher with no work yet; 409 TEACHER_HAS_WORK otherwise. */
+export const deleteTeacher = (id: string) => api.delete<void>(base(id));
+
+const cls = (id: string, classId: string) => `${base(id)}/classes/${classId}`;
+export const getTeacherClass = (id: string, classId: string) => api.get<TeacherClassDetail>(cls(id, classId));
+export const addClassStudent = (id: string, classId: string, email: string) =>
+  api.post<TeacherClassDetail>(`${cls(id, classId)}/students`, { email });
+export const removeClassStudent = (id: string, classId: string, studentId: string) =>
+  api.delete<void>(`${cls(id, classId)}/students/${studentId}`);
+export const decideJoinRequest = (id: string, classId: string, studentId: string, accept: boolean) =>
+  api.post<TeacherClassDetail>(`${cls(id, classId)}/requests/${studentId}/${accept ? "accept" : "decline"}`);
+export const setClassAutoAccept = (id: string, classId: string, autoAccept: boolean) =>
+  api.patch<TeacherClassDetail>(cls(id, classId), { autoAccept });
+export const renewClassCode = (id: string, classId: string) => api.post<TeacherClassDetail>(`${cls(id, classId)}/code`);
+
+export const moveAssignmentDue = (id: string, assignmentId: string, dueUtc: string) =>
+  api.patch<TeacherAssignmentDetail>(`${base(id)}/assignments/${assignmentId}`, { dueUtc });
+export const gradeSubmission = (id: string, assignmentId: string, studentId: string, score: number, feedback: string) =>
+  api.post<TeacherAssignmentDetail>(`${base(id)}/assignments/${assignmentId}/students/${studentId}/grade`, { score, feedback: feedback || null });

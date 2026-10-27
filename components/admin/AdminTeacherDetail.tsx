@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { ArrowLeft, CalendarDays, ClipboardList, GraduationCap, LayoutDashboard, Mail, MessageCircleQuestion, School, UsersRound } from "lucide-react";
 import { getAdminTeacher, STATUS_LABEL } from "@/lib/admin-teachers-api";
@@ -19,12 +20,15 @@ import {
   TeacherQuestionsTab,
   TeacherStudentsTab,
 } from "./teacher-detail/tabs";
+import { AccountControls } from "./teacher-detail/AccountControls";
+import { TeacherClassesTab } from "./teacher-detail/ClassesTab";
 
-type Tab = "overview" | "students" | "assignments" | "questions" | "messages" | "calendar" | "progress";
+type Tab = "overview" | "classes" | "students" | "assignments" | "questions" | "messages" | "calendar" | "progress";
 
 /** One teacher, as the teacher sees their own pages: classes, students, assignments, questions, messages, calendar and progress. */
 export default function AdminTeacherDetail({ id }: { id: string }) {
   const t = useT();
+  const router = useRouter();
   const load = useCallback(() => getAdminTeacher(id), [id]);
   const teacher = useAdminData(load, tk("We couldn't load this teacher. Please try again."));
   const [tab, setTab] = useState<Tab>("overview");
@@ -33,6 +37,7 @@ export default function AdminTeacherDetail({ id }: { id: string }) {
   const tabs: { key: Tab; label: string; count?: number }[] = x
     ? [
         { key: "overview", label: t("Overview") },
+        { key: "classes", label: t("Classes"), count: x.classes },
         { key: "students", label: t("Students"), count: x.students },
         { key: "assignments", label: t("Assignments & Grading"), count: x.assignments },
         { key: "questions", label: t("Student Questions"), count: x.openQuestions },
@@ -87,6 +92,13 @@ export default function AdminTeacherDetail({ id }: { id: string }) {
                 <Mail className="size-[1em]" /> {t("Email Teacher")}
               </a>
             </div>
+            <div className="mt-[1em]">
+              <AccountControls
+                teacher={x}
+                onChanged={(next) => teacher.setData(next)}
+                onDeleted={() => router.push("/admin/teachers" as Route)}
+              />
+            </div>
             <ul className="mt-[1.3em] grid gap-[0.7em] rounded-[1em] bg-[#f4f8fd] p-[0.8em] min-[480px]:grid-cols-2 lg:grid-cols-5">
               {kpis.map(({ icon: Icon, value, label }) => (
                 <li key={label} className="flex min-w-0 items-center gap-[0.7em] rounded-[0.8em] bg-white p-[0.8em]">
@@ -121,10 +133,12 @@ export default function AdminTeacherDetail({ id }: { id: string }) {
             ))}
           </div>
 
-          {x.status !== "Active" ? (
+          {x.status !== "Active" && x.status !== "Suspended" ? (
             <p className={`${PANEL} p-[1.5em] text-center text-[0.85em] text-[#5b6b7c]`}>{t("This teacher's account is not active yet, so there is nothing to follow.")}</p>
           ) : tab === "overview" ? (
             <TeacherOverviewTab id={id} />
+          ) : tab === "classes" ? (
+            <TeacherClassesTab id={id} />
           ) : tab === "students" ? (
             <TeacherStudentsTab id={id} />
           ) : tab === "assignments" ? (

@@ -107,4 +107,58 @@ export const adminTeachers: Record<string, string> = {
   "Weekly hours per student": "ساعات أسبوعية لكل طالب",
   "Skill Gaps": "فجوات المهارات",
   "No grades yet.": "لا توجد درجات بعد.",
+
+  // Managing the teachers (27 Oct 2026)
+  "Add Teacher": "إضافة معلم",
+  "Create a teacher account. The teacher can sign in right away with the email and password you set.":
+    "أنشئ حساب معلم. يستطيع المعلم تسجيل الدخول فورًا بالبريد وكلمة المرور اللذين تحددهما.",
+  "Choose the school": "اختر المدرسة",
+  "Choose the school.": "اختر المدرسة.",
+  "Choose at least one subject.": "اختر مادة واحدة على الأقل.",
+  "Choose at least one grade from 1 to 12.": "اختر صفًا واحدًا على الأقل من 1 إلى 12.",
+  "Write the teacher's name, up to 100 characters.": "اكتب اسم المعلم، حتى 100 حرف.",
+  "We could not find this school.": "لم نجد هذه المدرسة.",
+  "We could not find this teacher.": "لم نجد هذا المعلم.",
+  "We couldn't load the schools. Please try again.": "تعذّر تحميل المدارس. حاول مرة أخرى.",
+  "We couldn't save the teacher. Please try again.": "تعذّر حفظ بيانات المعلم. حاول مرة أخرى.",
+  "Deactivated": "موقوف",
+  "Edit Teacher": "تعديل المعلم",
+  "Delete Teacher": "حذف المعلم",
+  "The changes are saved.": "تم حفظ التعديلات.",
+  "Save Password": "حفظ كلمة المرور",
+  "At least 8 characters with letters, numbers and a special character. The teacher is signed out everywhere.":
+    "8 أحرف على الأقل فيها حروف وأرقام ورمز خاص. سيتم تسجيل خروج المعلم من كل الأجهزة.",
+  "The new password is saved. The teacher was signed out everywhere.": "تم حفظ كلمة المرور الجديدة، وتم تسجيل خروج المعلم من كل الأجهزة.",
+  "We couldn't save the password. Please try again.": "تعذّر حفظ كلمة المرور. حاول مرة أخرى.",
+  "Reject Sign-up": "رفض التسجيل",
+  "Delete {name}'s account for good? Only a teacher who has no assignments, lessons, messages or content yet can be deleted.":
+    "حذف حساب {name} نهائيًا؟ لا يمكن حذف إلا المعلم الذي ليس لديه واجبات أو دروس أو رسائل أو محتوى بعد.",
+  "We couldn't delete the teacher. Please try again.": "تعذّر حذف المعلم. حاول مرة أخرى.",
+  "This teacher already has assignments, lessons, messages or content. Deactivate the account instead.":
+    "لدى هذا المعلم واجبات أو دروس أو رسائل أو محتوى بالفعل. أوقف الحساب بدلًا من حذفه.",
+  "Only an active teacher can be deactivated, and only a deactivated one activated. Approve a sign-up from Pending Requests.":
+    "يمكن إيقاف المعلم النشط فقط، وتفعيل الموقوف فقط. وافق على التسجيلات الجديدة من الطلبات المعلقة.",
+  "This account is turned off. Please contact Junior Hub.": "هذا الحساب موقوف. تواصل مع جونيور هب.",
+
+  // Classes tab
+  "Manage each class as the teacher does: students, join requests, the join code.": "أدِر كل فصل كما يديره المعلم: الطلاب وطلبات الانضمام وكود الانضمام.",
+  "We couldn't load the class. Please try again.": "تعذّر تحميل الفصل. حاول مرة أخرى.",
+  "New Code": "كود جديد",
+  "Accept join requests automatically": "قبول طلبات الانضمام تلقائيًا",
+  "Join Requests": "طلبات الانضمام",
+  "Student's email": "بريد الطالب",
+  "Add Student by Email": "إضافة طالب بالبريد",
+  "No students in this class yet.": "لا يوجد طلاب في هذا الفصل بعد.",
+  "From the school record": "من سجل المدرسة",
+  "Attendance {n}%": "الحضور {n}%",
+  "Mastery {n}%": "الإتقان {n}%",
+
+  // Assignments
+  "Due date": "موعد التسليم",
+  "Move Due Date": "تغيير موعد التسليم",
+  "We couldn't move the due date. Please try again.": "تعذّر تغيير موعد التسليم. حاول مرة أخرى.",
+  "Feedback (optional)": "ملاحظة (اختياري)",
+  "Update Grade": "تعديل الدرجة",
+  "The score is 0 to {max}.": "الدرجة من 0 إلى {max}.",
+  "We couldn't save the grade. Please try again.": "تعذّر حفظ الدرجة. حاول مرة أخرى.",
 };
