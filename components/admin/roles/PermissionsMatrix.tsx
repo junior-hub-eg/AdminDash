@@ -3,6 +3,19 @@
 import {
   Award,
   BellRing,
+  BookOpen,
+  Bot,
+  Briefcase,
+  CalendarDays,
+  ClipboardCheck,
+  ClipboardList,
+  FileBadge,
+  FileText,
+  GraduationCap,
+  Megaphone,
+  MessageCircle,
+  School,
+  TrendingUp,
   ChartLine,
   CircleCheck,
   Clock,
@@ -21,7 +34,7 @@ import {
   Users,
   UsersRound,
 } from "lucide-react";
-import { SYSTEM_ADMIN_ROLE, type AdminRole, type RolePermission } from "@/lib/admin-api";
+import { SYSTEM_ADMIN_ROLE, type AdminRole, type RoleAudience, type RolePermission } from "@/lib/admin-api";
 import { useT } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
 import { PANEL } from "../page-parts";
@@ -62,7 +75,46 @@ const AREAS: { match: string; sub: string; icon: LucideIcon }[] = [
   { match: "setting", sub: tk("Platform settings and preferences"), icon: Settings },
 ];
 
-const areaInfo = (area: string) => AREAS.find((x) => area.toLowerCase().includes(x.match));
+/** The pages of the other dashboards (Mentor / Instructor, Teacher and Student roles), by "{audience}:{area}". */
+const DASHBOARD_AREAS: Record<string, { sub: string; icon: LucideIcon }> = {
+  "Mentor:Overview": { sub: tk("Home page, badges and search"), icon: LayoutGrid },
+  "Mentor:Reviews": { sub: tk("Sprint reviews and submissions"), icon: ClipboardCheck },
+  "Mentor:Messages": { sub: tk("Chats with students and squads"), icon: MessageCircle },
+  "Mentor:My Squads": { sub: tk("Squads, members, links and track requests"), icon: UsersRound },
+  "Mentor:My Students": { sub: tk("Students, notes and claiming new ones"), icon: GraduationCap },
+  "Mentor:Calendar": { sub: tk("Sessions, availability, time off and feedback"), icon: CalendarDays },
+  "Mentor:Announcements": { sub: tk("Announcements to their students"), icon: Megaphone },
+  "Mentor:Reports": { sub: tk("Reports, trends and exports"), icon: ChartLine },
+  "Teacher:Dashboard": { sub: tk("The teacher's home page"), icon: LayoutGrid },
+  "Teacher:My Classes": { sub: tk("Classes, join codes, requests and weekly plan"), icon: School },
+  "Teacher:Students": { sub: tk("Students' progress and reminders"), icon: Users },
+  "Teacher:Curriculum": { sub: tk("Units, lessons, problems, videos and grammar"), icon: BookOpen },
+  "Teacher:Assignments": { sub: tk("Assignments, grading and students' questions"), icon: ClipboardList },
+  "Teacher:Progress": { sub: tk("Progress, gradebook and reports"), icon: TrendingUp },
+  "Teacher:Messages": { sub: tk("Class channels, messages and broadcasts"), icon: MessageCircle },
+  "Teacher:Calendar": { sub: tk("Lessons, office hours and meetings"), icon: CalendarDays },
+  "Student:Courses": { sub: tk("Tracks, lessons, placement and exams"), icon: Compass },
+  "Student:AI Curriculum": { sub: tk("School curriculum, problems and grammar coach"), icon: BookOpen },
+  "Student:Classes & Assignments": { sub: tk("Classes, assignments, questions and calendar"), icon: School },
+  "Student:AI Interview": { sub: tk("The track discovery interview"), icon: Bot },
+  "Student:Recruitment Practice": { sub: tk("Practice jobs and interviews"), icon: FileText },
+  "Student:Mentorship": { sub: tk("Mentor, sessions and mentor chat"), icon: Smile },
+  "Student:Internship": { sub: tk("Squad, tasks, sprint and leaderboard"), icon: Briefcase },
+  "Student:My Projects": { sub: tk("Projects and briefs"), icon: Folder },
+  "Student:Certification": { sub: tk("Certificates and achievements"), icon: FileBadge },
+  "Student:Messages": { sub: tk("Chats with classmates, mentors and teachers"), icon: MessageCircle },
+  "Student:AI Assistant": { sub: tk("The student assistant chatbot"), icon: Bot },
+};
+
+const areaInfo = (area: string, audience: RoleAudience = "Admin") =>
+  audience === "Admin" ? AREAS.find((x) => area.toLowerCase().includes(x.match)) : DASHBOARD_AREAS[`${audience}:${area}`];
+
+/** What the note above a dashboard role's matrix says. */
+const DASHBOARD_NOTE: Record<Exclude<RoleAudience, "Admin">, string> = {
+  Mentor: tk("These are the pages of the Mentor dashboard. What you turn off here disappears from every mentor's dashboard and is blocked at once."),
+  Teacher: tk("These are the pages of the Teacher dashboard. What you turn off here disappears from every teacher's dashboard and is blocked at once."),
+  Student: tk("These are the pages of the Student dashboard. What you turn off here disappears from every student's dashboard and is blocked at once."),
+};
 
 /** The scope chip, from the rights the role really has on the module. */
 function scope(p: RolePermission): { label: string; tone: string } {
@@ -124,6 +176,12 @@ export function PermissionsMatrix({
         </div>
       </header>
 
+      {role.audience && role.audience !== "Admin" && (
+        <p className="mx-[1.3em] mb-[0.8em] flex items-center gap-[0.5em] rounded-[0.6em] bg-[#eef3fb] px-[1em] py-[0.5em] text-[0.75em] font-semibold text-[#0b6f86]">
+          <ShieldCheck className="size-[1.1em] shrink-0" /> {t(DASHBOARD_NOTE[role.audience])}
+        </p>
+      )}
+
       {locked && (
         <p className="mx-[1.3em] mb-[0.8em] flex items-center gap-[0.5em] rounded-[0.6em] bg-[#eef3fb] px-[1em] py-[0.5em] text-[0.75em] font-semibold text-[#0b6f86]">
           <Lock className="size-[1.1em] shrink-0" /> {t("System Admin always keeps full access, so no admin can be locked out.")}
@@ -140,7 +198,7 @@ export function PermissionsMatrix({
         <table className="w-full min-w-[52em] text-start text-[0.8em]">
           <thead>
             <tr className="bg-[#eaf1fd] text-[0.78em] font-semibold uppercase tracking-[0.04em] text-[#3d4f61]">
-              <th className="px-[1.3em] py-[1.2em] text-start ps-[3.5em]">{t("Platform Module")}</th>
+              <th className="px-[1.3em] py-[1.2em] text-start ps-[3.5em]">{role.audience && role.audience !== "Admin" ? t("Dashboard Page") : t("Platform Module")}</th>
               {COLS.map((c) => (
                 <th key={c.key} className="px-[0.6em] py-[1.2em] text-center">
                   {t(c.label)}
@@ -158,7 +216,7 @@ export function PermissionsMatrix({
               </tr>
             )}
             {role.permissions.map((p) => {
-              const info = areaInfo(p.area);
+              const info = areaInfo(p.area, role.audience);
               const Icon = info?.icon ?? LayoutGrid;
               const sc = scope(p);
               return (

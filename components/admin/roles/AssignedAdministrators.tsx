@@ -170,7 +170,7 @@ function ReassignRoleDialog({
         <label className="grid gap-1 font-semibold">
           {t("Role")}
           <select required value={roleId} onChange={(e) => setRoleId(e.target.value)} className={FIELD}>
-            {roles.map((r) => (
+            {roles.filter((r) => r.audience === "Admin").map((r) => (
               <option key={r.id} value={r.id}>
                 {t(r.name)}
               </option>
