@@ -70,7 +70,8 @@ function useTeacherData<T>(id: string, load: (id: string) => Promise<T>, fail: s
 
 // ---------- Overview ----------
 
-export function TeacherOverviewTab({ id }: { id: string }) {
+/** `onOpenClass` opens a class's details (the Classes tab). */
+export function TeacherOverviewTab({ id, onOpenClass }: { id: string; onOpenClass: (classId: string) => void }) {
   const t = useT();
   const dash = useTeacherData(id, getTeacherDashboard, tk("We couldn't load the teacher's dashboard. Please try again."));
   const classes = useTeacherData(id, getTeacherClasses, tk("We couldn't load the classes. Please try again."));
@@ -89,9 +90,15 @@ export function TeacherOverviewTab({ id }: { id: string }) {
               {classes.data.map((c) => {
                 const progress = d?.classProgress.find((p) => p.classId === c.id);
                 return (
-                  <li key={c.id} className={SOFT}>
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenClass(c.id)}
+                      aria-label={t("Open class {name}", { name: c.name })}
+                      className={`${SOFT} block w-full text-start transition hover:bg-[#e6f1fb] hover:shadow-[0_4px_14px_rgba(20,54,90,0.08)]`}
+                    >
                     <div className="flex items-start justify-between gap-[0.5em]">
-                      <p className="font-bold text-[#0b1b2b]">{t("Class {name}", { name: c.name })}</p>
+                      <p className="font-bold text-[#0b1b2b] underline-offset-2 hover:underline">{t("Class {name}", { name: c.name })}</p>
                       <span className="text-[0.7em] text-[#5b6b7c]" dir="ltr">{c.joinCode}</span>
                     </div>
                     <p className="text-[0.75em] text-[#5b6b7c]">
@@ -107,6 +114,7 @@ export function TeacherOverviewTab({ id }: { id: string }) {
                       {c.currentPlan ? t("This week: {title}", { title: c.currentPlan }) : t("No lesson planned this week")}
                       {c.pendingRequests > 0 && <> • <b className="text-[#9a6a00]">{t("{n} join requests", { n: c.pendingRequests })}</b></>}
                     </p>
+                    </button>
                   </li>
                 );
               })}
