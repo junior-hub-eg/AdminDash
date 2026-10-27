@@ -7,7 +7,8 @@ import { BookOpenCheck, ClipboardList, Download, GraduationCap, MessageCircleQue
 import { getAdminTeachers, STATUS_LABEL, type AdminTeacher } from "@/lib/admin-teachers-api";
 import { useI18n } from "@/lib/i18n/client";
 import { tk } from "@/lib/i18n/translate";
-import { AdminPage, INPUT, PANEL } from "./page-parts";
+import { AdminPage } from "./AdminPage";
+import { INPUT, PANEL } from "./page-parts";
 import { LoadState, useAdminData } from "./admin-data";
 import { initials, shortDate } from "./mentor-detail/format";
 
