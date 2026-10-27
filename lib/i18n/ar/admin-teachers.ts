@@ -161,4 +161,10 @@ export const adminTeachers: Record<string, string> = {
   "Update Grade": "تعديل الدرجة",
   "The score is 0 to {max}.": "الدرجة من 0 إلى {max}.",
   "We couldn't save the grade. Please try again.": "تعذّر حفظ الدرجة. حاول مرة أخرى.",
+
+  // Class details (27 Oct 2026)
+  "Open class {name}": "افتح فصل {name}",
+  "Assignments in this class": "واجبات هذا الفصل",
+  "Weekly Plan": "الخطة الأسبوعية",
+  "No lessons planned for this class yet.": "لا توجد دروس مخططة لهذا الفصل بعد.",
 };

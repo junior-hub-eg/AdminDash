@@ -291,6 +291,9 @@ export interface TeacherClassDetail {
   subjects: string[];
   students: ClassStudent[];
   requests: { studentId: string; fullName: string; requestedUtc: string }[];
+  /** The weekly plan of the class (lessons by week). */
+  plan: { id: string; subject: string; weekStart: string; title: string; notes: string | null }[];
+  assignments: TeacherAssignment[];
 }
 
 export const getSchools = async () =>

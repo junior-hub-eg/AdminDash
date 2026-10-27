@@ -32,6 +32,11 @@ export default function AdminTeacherDetail({ id }: { id: string }) {
   const load = useCallback(() => getAdminTeacher(id), [id]);
   const teacher = useAdminData(load, tk("We couldn't load this teacher. Please try again."));
   const [tab, setTab] = useState<Tab>("overview");
+  const [openClass, setOpenClass] = useState<string | null>(null);
+  const openClassDetails = (classId: string) => {
+    setOpenClass(classId);
+    setTab("classes");
+  };
   const x = teacher.data;
 
   const tabs: { key: Tab; label: string; count?: number }[] = x
@@ -136,9 +141,9 @@ export default function AdminTeacherDetail({ id }: { id: string }) {
           {x.status !== "Active" && x.status !== "Suspended" ? (
             <p className={`${PANEL} p-[1.5em] text-center text-[0.85em] text-[#5b6b7c]`}>{t("This teacher's account is not active yet, so there is nothing to follow.")}</p>
           ) : tab === "overview" ? (
-            <TeacherOverviewTab id={id} />
+            <TeacherOverviewTab id={id} onOpenClass={openClassDetails} />
           ) : tab === "classes" ? (
-            <TeacherClassesTab id={id} />
+            <TeacherClassesTab key={openClass ?? ""} id={id} initialClassId={openClass} />
           ) : tab === "students" ? (
             <TeacherStudentsTab id={id} />
           ) : tab === "assignments" ? (

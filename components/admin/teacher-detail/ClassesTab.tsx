@@ -18,7 +18,7 @@ import { tk } from "@/lib/i18n/translate";
 import { BTN_SECONDARY, INPUT } from "../page-parts";
 import { LoadState, useAdminData } from "../admin-data";
 import { EmptyNote, Section } from "../mentor-detail/parts";
-import { shortDate } from "../mentor-detail/format";
+import { plainDate, shortDate } from "../mentor-detail/format";
 
 const SMALL = `${BTN_SECONDARY} !px-[0.8em] !py-[0.35em] !text-[0.75em]`;
 
@@ -165,16 +165,54 @@ function ClassPanel({ id, classId, onChanged }: { id: string; classId: string; o
           ))}
         </ul>
       )}
+
+      <div className="grid gap-[1em] border-t border-[#eef2f7] pt-[1em] xl:grid-cols-2">
+        <div className="min-w-0">
+          <p className="mb-[0.4em] text-[0.75em] font-bold uppercase tracking-[0.08em] text-[#8a97a6]">{t("Assignments in this class")}</p>
+          {(c.assignments ?? []).length === 0 ? (
+            <EmptyNote text={t("No assignments in this class yet.")} />
+          ) : (
+            <ul className="grid gap-[0.4em] text-[0.78em]">
+              {[...c.assignments].sort((a, b) => b.dueUtc.localeCompare(a.dueUtc)).map((a) => (
+                <li key={a.id} className="rounded-[0.6em] bg-[#f4f8fd] px-[0.8em] py-[0.5em]">
+                  <b dir="auto" className="block text-start text-[#0b1b2b]">{a.title}</b>
+                  <span className="text-[#5b6b7c]">
+                    {t(a.subject)} • {t("Due {date}", { date: shortDate(a.dueUtc) })} • {t("{s}/{n} handed in", { s: a.submitted, n: a.enrolled })} •{" "}
+                    {t("{n} to grade", { n: a.submitted - a.graded })}
+                    {a.averagePercent != null && <> • {t("Avg. {v}", { v: `${a.averagePercent}%` })}</>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="mb-[0.4em] text-[0.75em] font-bold uppercase tracking-[0.08em] text-[#8a97a6]">{t("Weekly Plan")}</p>
+          {(c.plan ?? []).length === 0 ? (
+            <EmptyNote text={t("No lessons planned for this class yet.")} />
+          ) : (
+            <ul className="grid gap-[0.4em] text-[0.78em]">
+              {[...c.plan].sort((a, b) => b.weekStart.localeCompare(a.weekStart)).map((p) => (
+                <li key={p.id} className="rounded-[0.6em] bg-[#f4f8fd] px-[0.8em] py-[0.5em]">
+                  <b dir="auto" className="block text-start text-[#0b1b2b]">{p.title}</b>
+                  <span className="text-[#5b6b7c]">{t("Week of {date}", { date: plainDate(p.weekStart) })} • {t(p.subject)}</span>
+                  {p.notes && <span dir="auto" className="block text-start text-[#5b6b7c]">{p.notes}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 /** The teacher's classes; open one to manage its students, requests, code and auto-accept. */
-export function TeacherClassesTab({ id }: { id: string }) {
+export function TeacherClassesTab({ id, initialClassId }: { id: string; initialClassId?: string | null }) {
   const t = useT();
   const load = useCallback(() => getTeacherClasses(id), [id]);
   const classes = useAdminData(load, tk("We couldn't load the classes. Please try again."));
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(initialClassId ?? null);
 
   if (!classes.data) return <Section title={t("Classes")}><LoadState error={classes.error} onRetry={classes.reload} /></Section>;
   const current = open ?? classes.data[0]?.id ?? null;
