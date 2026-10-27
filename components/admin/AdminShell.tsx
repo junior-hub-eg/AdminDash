@@ -25,6 +25,7 @@ import {
   MessageSquareWarning,
   MoreHorizontal,
   Presentation,
+  School,
   Search,
   Settings,
   Shield,
@@ -67,6 +68,7 @@ const NAV_GROUPS: NavItem[][] = [
   ],
   [
     { href: "/admin/mentors", label: tk("Mentors Management"), icon: SquareTerminal, area: "Mentors" },
+    { href: "/admin/teachers", label: tk("Teachers Management"), icon: School, area: "Teachers" },
     { href: "/admin/tracks", label: tk("Track Management"), icon: Presentation, area: "Tracks" },
     { href: "/admin/notifications", label: tk("Notifications"), icon: Bell, area: "Notifications" },
     { href: "/admin/messages", label: tk("Messages"), icon: MessageCircle, area: "Notifications" },

@@ -37,6 +37,7 @@ import { teacherCalendar } from "./ar/teacher-calendar";
 import { teacherProgress } from "./ar/teacher-progress";
 import { grammarCoach } from "./ar/grammar-coach";
 import { adminGrammar } from "./ar/admin-grammar";
+import { adminTeachers } from "./ar/admin-teachers";
 import { adminCertificates } from "./ar/admin-certificates";
 import { teacherGrammar } from "./ar/teacher-grammar";
 import { mentorArea } from "./ar/mentor-area";
@@ -90,4 +91,5 @@ export const ar: Record<string, string> = {
   ...adminCertificates,
   ...teacherGrammar,
   ...adminReports,
+  ...adminTeachers,
 };
